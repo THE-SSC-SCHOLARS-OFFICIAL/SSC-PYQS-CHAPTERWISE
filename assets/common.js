@@ -1,0 +1,197 @@
+/* Shared helpers used by both the hub (index.html) and the test page (test.html) */
+(function () {
+  var C = window.HUB_CONFIG;
+  var cache = {};
+
+  function dataUrl(year, subject) {
+    return C.dataDir + "/" + year + "_" + subject + ".json" +
+      (C.dataVersion ? "?v=" + encodeURIComponent(C.dataVersion) : "");
+  }
+
+  /* Fetch a subject JSON (cached in memory and by the browser) with byte-level progress */
+  function fetchSubject(year, subject, onProgress) {
+    var key = year + "_" + subject;
+    if (cache[key]) return Promise.resolve(cache[key]);
+    var url = dataUrl(year, subject);
+    return fetch(url, { cache: "force-cache" }).then(function (res) {
+      if (!res.ok) { var e = new Error("HTTP " + res.status); e.status = res.status; e.url = url; throw e; }
+      if (!res.body || !res.body.getReader || !onProgress) return res.json();
+      var reader = res.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return;
+          chunks.push(r.value); got += r.value.length; onProgress(got);
+          return pump();
+        });
+      }
+      return pump().then(function () { return new Blob(chunks).text(); })
+                   .then(function (t) { return JSON.parse(t); });
+    }).then(function (j) { cache[key] = j; return j; });
+  }
+
+  function describeError(e, year, subject) {
+    if (location.protocol === "file:") {
+      return { msg: "This page was opened from the local file system.",
+               sub: "Browsers block JSON loading from file:// addresses. Open a terminal in this folder, run " +
+                    "\"python -m http.server 8000\" and visit http://localhost:8000, or host the site on GitHub Pages." };
+    }
+    if (e && e.status === 404) {
+      return { msg: year + "_" + subject + ".json was not found.",
+               sub: "Place the file in the \"" + C.dataDir + "\" folder (expected at " + (e.url || "") + ")." };
+    }
+    return { msg: "The data could not be loaded.", sub: String((e && e.message) || e) };
+  }
+
+  /* ---- progress (saved test state in localStorage) ---- */
+  function storageKey(year, subject, setId) { return "sscscholars_hub_" + year + "_" + subject + "_" + setId; }
+
+  function readStatus(year, subject, setId) {
+    try {
+      var raw = localStorage.getItem(storageKey(year, subject, setId));
+      if (!raw) return null;
+      var s = JSON.parse(raw).s;
+      if (!s) return null;
+      if (s.phase === "submitted" && s.result) return { kind: "done", score: s.result.score, max: s.result.maxMarks };
+      if (s.phase === "testing" || s.phase === "paused") return { kind: "progress", left: s.timeLeft };
+      return null;
+    } catch (e) { return null; }
+  }
+
+  /* ---- JSON structure helpers ---- */
+  function findSet(json, setId) {
+    var cats = json.categories || [];
+    for (var a = 0; a < cats.length; a++) {
+      var chs = cats[a].chapters || [];
+      for (var b = 0; b < chs.length; b++) {
+        var sets = chs[b].sets || [];
+        for (var c = 0; c < sets.length; c++) {
+          if (sets[c].set_id === setId) return { category: cats[a], chapter: chs[b], set: sets[c], multiCategory: cats.length > 1 };
+        }
+      }
+    }
+    return null;
+  }
+
+  function shortSubjectLabel(subject) {
+    for (var i = 0; i < C.subjects.length; i++) {
+      if (C.subjects[i].key === subject) return C.subjects[i].label.replace(/\s*\(.*\)\s*/, "");
+    }
+    return subject;
+  }
+
+  function fmtScore(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) return "";
+    return String(Math.round(n * 100) / 100);
+  }
+
+  function minutesFromLabel(label) {
+    var m = String(label || "").match(/(\d+)/);
+    return m ? parseInt(m[1], 10) * 60 : 0;
+  }
+
+  /* Relative image paths (when images were downloaded locally) are resolved against the data folder */
+  var IMG_RE = /(<img\b[^>]*?\bsrc\s*=\s*)(["'])(.*?)\2/gi;
+  /* Some questions arrive with their HTML tags escaped (&lt;span class=&quot;math-tex&quot;&gt;) and would
+     show up as visible text. This turns only genuine HTML tags back into tags and leaves math symbols
+     such as "x &lt; y" untouched. */
+  var ESC_TAG = /&lt;(\/?)(span|p|br|b|i|u|em|strong|sub|sup|img|div|font|table|thead|tbody|tr|td|th|ul|ol|li|h[1-6])((?:\s[^<>]*?)?)(\/?)&gt;/gi;
+  function unescapeTags(html) {
+    if (!html) return "";
+    if (html.indexOf("&amp;lt;") !== -1) {
+      html = html.replace(/&amp;(lt|gt|quot|amp);/g, "&$1;");
+    }
+    if (html.indexOf("&lt;") === -1) return html;
+    return html.replace(ESC_TAG, function (m, slash, tag, attrs, selfc) {
+      attrs = attrs.replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&amp;/g, "&");
+      return "<" + slash + tag + attrs + selfc + ">";
+    });
+  }
+
+  function fixSrc(html) {
+    html = unescapeTags(html);
+    if (!html || html.toLowerCase().indexOf("<img") === -1) return html || "";
+    var base = (C.imagesBase || (C.dataDir + "/"));
+    return html.replace(IMG_RE, function (m, head, q, u) {
+      if (/^(https?:|data:|\/\/|\/)/i.test(u)) return m;
+      return head + q + base + u.replace(/^\.\//, "") + q;
+    });
+  }
+  function fixUrl(u) {
+    if (!u || /^(https?:|data:|\/\/|\/)/i.test(u)) return u || "";
+    return (C.imagesBase || (C.dataDir + "/")) + u.replace(/^\.\//, "");
+  }
+  function withImg(html, url) {
+    html = html || "";
+    if (!url || html.indexOf(url) !== -1) return html;
+    return html + '<br><img src="' + url + '" alt="">';
+  }
+
+  function normQuestion(q, i, setCs, setNs) {
+    var ex = q.extra_image_fields || {};
+    var optsRaw = q.options || {};
+    var opts = {};
+    for (var n = 1; n <= 5; n++) {
+      var v = optsRaw[String(n)] || optsRaw["option_" + n];
+      if (!v) continue;
+      if (typeof v === "string") v = { en: v, hi: "" };
+      var oi = ex["option_image_" + n];
+      opts["option_" + n] = {
+        en: fixSrc(withImg(v.en || "", oi)),
+        hi: v.hi ? fixSrc(withImg(v.hi, oi)) : "",
+        image: ""
+      };
+    }
+    var qq = q.question || {};
+    var sol = q.solution || q.solution_text || {};
+    var si = ex.solution_image;
+    var ans = String(q.answer == null ? "" : q.answer).trim().replace(/^option[_\s]?(\d+)$/i, "$1");
+    var qimg = ex.question_image ? fixUrl(ex.question_image) : "";
+    return {
+      q_no: q.q_no || (i + 1),
+      id: String(q.uid || q.id || ""),
+      topic: q.topic || "",
+      difficulty_level: q.difficulty_level || "",
+      question: { en: fixSrc(qq.en || ""), hi: fixSrc(qq.hi || "") },
+      question_image: qimg,
+      options: opts,
+      answer: ans,
+      correct_score: (q.correct_score !== undefined && q.correct_score !== "") ? q.correct_score : setCs,
+      negative_score: (q.negative_score !== undefined && q.negative_score !== "") ? q.negative_score : setNs,
+      solution_text: { en: fixSrc(withImg(sol.en || "", si)), hi: sol.hi ? fixSrc(withImg(sol.hi, si)) : "" },
+      solution_image: ""
+    };
+  }
+
+  /* One set from the JSON -> engine config + questions */
+  function buildTest(json, found, year, subject) {
+    var set = found.set, chapter = found.chapter, category = found.category;
+    var meta = chapter.api_meta || {};
+    var csRaw = set.correct_score != null && set.correct_score !== "" ? set.correct_score : (meta.correct_score != null ? meta.correct_score : 2);
+    var nsRaw = set.negative_score != null && set.negative_score !== "" ? set.negative_score : (meta.negative_score != null ? meta.negative_score : 0.5);
+    var secs = parseInt(set.time_seconds, 10) || minutesFromLabel(set.time_label) || 1800;
+    var partTxt = set.part ? "PART " + set.part : (set.title || "");
+    var label = shortSubjectLabel(subject);
+    if (found.multiCategory) label += " - " + category.category;
+    var qs = (set.questions || []).map(function (q, i) { return normQuestion(q, i, csRaw, nsRaw); });
+    return {
+      cfg: {
+        examTitle: (chapter.chapter + " - " + partTxt + " (" + year + ")").toUpperCase(),
+        sectionLabel: label,
+        storageKey: storageKey(year, subject, set.set_id),
+        totalTimeSeconds: secs,
+        correctScoreDisplay: fmtScore(csRaw),
+        negativeScoreDisplay: fmtScore(nsRaw),
+        defaultCorrectScore: parseFloat(csRaw) || 2,
+        defaultNegativeScore: isNaN(parseFloat(nsRaw)) ? 0.5 : parseFloat(nsRaw)
+      },
+      questions: qs
+    };
+  }
+
+  window.HubCommon = {
+    dataUrl: dataUrl, fetchSubject: fetchSubject, describeError: describeError,
+    storageKey: storageKey, readStatus: readStatus, findSet: findSet,
+    buildTest: buildTest, unescapeTags: unescapeTags, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
+  };
+})();
