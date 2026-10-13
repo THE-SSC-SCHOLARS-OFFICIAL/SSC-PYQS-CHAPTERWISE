@@ -145,3 +145,6 @@ select option{background:#0a0a0a; color:var(--text);}
   *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
   .note .bar2 i{width:100%;}
 }
+
+.nav-btns{display:flex; gap:10px; align-items:center;}
+a.chip-btn{display:inline-block; text-decoration:none;}
