@@ -148,3 +148,11 @@ select option{background:#0a0a0a; color:var(--text);}
 
 .nav-btns{display:flex; gap:10px; align-items:center;}
 a.chip-btn{display:inline-block; text-decoration:none;}
+@media (max-width:640px){
+  #topbar{gap:8px;}
+  .nav-btns{gap:6px;}
+  .chip-btn{padding:9px 9px; font-size:10px; letter-spacing:.8px;}
+  .brand-text{font-size:13px; letter-spacing:.3px;}
+  .brand-text .brand-dim{display:none;}
+}
+.chip-btn{white-space:nowrap;}
