@@ -1,6 +1,7 @@
 /* Saved questions page: hub dark theme for the lists, light card for the question viewer */
 .sv-hero{margin-bottom:28px;}
-.sv-year{flex:0 0 auto;margin-bottom:34px;}
+.picker{margin-bottom:6px;}
+#listView{margin-top:26px;}
 .sv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
 .sv-card{text-align:left;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 22px 20px;cursor:pointer;color:var(--text);transition:border-color .2s,background .2s,transform .2s;font-family:var(--body);}
 .sv-card:hover{border-color:var(--border-hover);background:var(--panel-2);transform:translateY(-2px);}
