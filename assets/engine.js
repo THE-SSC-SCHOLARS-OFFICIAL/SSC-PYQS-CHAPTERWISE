@@ -1,6 +1,10 @@
 /* ============================================================
    THE SSC SCHOLARS OFFICIAL -- Mock Test Engine
-   UI/UX pattern matched to the user's reference CPO mock file.
+   SSC CBT style exam flow:
+   instructions (2 pages) -> test (Save & Next / Mark for Review /
+   shaped palette / pause / submit) -> analysis -> solutions.
+   Contract with the loader:  window.MOCK_CFG, window.MOCK_QUESTIONS
+   Saved state keeps the same shape the hub reads (phase, timeLeft, result.score/maxMarks).
    ============================================================ */
 var CFG = window.MOCK_CFG;
 var QUESTIONS = window.MOCK_QUESTIONS;
@@ -8,332 +12,107 @@ var N = QUESTIONS.length;
 var STORAGE_KEY = CFG.storageKey;
 var OPT_LETTERS = ["A","B","C","D","E"];
 var OPT_KEYS = ["option_1","option_2","option_3","option_4","option_5"];
-
 var hasHindi = QUESTIONS.some(function(q){ return q.question && q.question.hi; });
 
 var state = null;
 var timerHandle = null;
+var draft = null;            /* option picked on the current question but not saved yet */
 
 function $(id){ return document.getElementById(id); }
+function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
 function freshState(){
   var qs = [];
-  for(var i=0;i<N;i++){ qs.push({status:"notvisited", selected:null, solutionSeen:false}); }
+  for(var i=0;i<N;i++){ qs.push({status:"notvisited", selected:null, solutionSeen:false, t:0}); }
   return {
-    phase: "welcome",
-    current: 0,
-    q: qs,
-    instantFeedback: false,
-    timeLeft: CFG.totalTimeSeconds,
-    startedAt: null,
-    finishedAt: null,
-    result: null,
-    solIndex: 0,
-    paletteHidden: false,
-    solPaletteHidden: false,
-    lang: "en",
-    solLang: "en"
+    phase: "welcome", current: 0, q: qs, instantFeedback: false,
+    timeLeft: CFG.totalTimeSeconds, startedAt: null, finishedAt: null, result: null,
+    solIndex: 0, solFilter: "all", palHidden: false, solPalHidden: false, lang: "en", solLang: "en"
   };
 }
-
 function loadState(){
   try{
     var raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return freshState();
     var parsed = JSON.parse(raw);
     if(!parsed || parsed.n !== N || !parsed.s || !parsed.s.q || parsed.s.q.length !== N) return freshState();
-    return parsed.s;
+    var s = parsed.s;
+    s.q.forEach(function(x){ if(typeof x.t !== "number") x.t = 0; });
+    if(!s.solFilter) s.solFilter = "all";
+    if(s.lang === "bilingual") s.lang = "bi";
+    return s;
   }catch(e){ return freshState(); }
 }
-
 function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({n:N, s:state})); }catch(e){}
 }
 
-function escapeHtml(s){
-  var d = document.createElement("div");
-  d.textContent = s == null ? "" : String(s);
-  return d.innerHTML;
-}
+function escapeHtml(s){ var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
 
-function qHtml(q, lang){ return (lang === "hi" && q.question.hi) ? q.question.hi : q.question.en; }
-function optHtml(q, key, lang){
-  var o = q.options[key];
-  if(!o) return "";
-  return (lang === "hi" && o.hi) ? o.hi : o.en;
+/* ---- bilingual-aware text helpers ---- */
+function pick(en, hi, lang){
+  en = en || ""; hi = hi || "";
+  if(lang === "hi" && hi) return '<div class="hi">' + hi + '</div>';
+  if(lang === "bi" && hi && en){
+    if(hi.replace(/\s+/g,"") === en.replace(/\s+/g,"")) return en;
+    return en + '<hr class="bi-sep"><div class="hi">' + hi + '</div>';
+  }
+  return en || hi;
 }
-function solHtml(q, lang){
-  if(!q.solution_text) return "";
-  return (lang === "hi" && q.solution_text.hi) ? q.solution_text.hi : q.solution_text.en;
-}
+function qHtml(q, lang){ return pick(q.question.en, q.question.hi, lang); }
+function optHtml(q, key, lang){ var o = q.options[key]; return o ? pick(o.en, o.hi, lang) : ""; }
+function solHtml(q, lang){ return q.solution_text ? pick(q.solution_text.en, q.solution_text.hi, lang) : ""; }
 
 function pad2(n){ n = Math.floor(n); return n < 10 ? "0"+n : ""+n; }
-function fmtClock(sec){
-  sec = Math.max(0, Math.floor(sec));
-  var m = Math.floor(sec/60), s = sec%60;
-  return pad2(m) + ":" + pad2(s);
-}
-function fmtLong(sec){
-  sec = Math.max(0, Math.floor(sec));
-  var m = Math.floor(sec/60), s = sec%60;
-  return m + "m " + s + "s";
-}
+function fmtClock(sec){ sec = Math.max(0, Math.floor(sec)); return pad2(Math.floor(sec/60)) + ":" + pad2(sec%60); }
+function fmtLong(sec){ sec = Math.max(0, Math.floor(sec)); var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60; return (h ? h+"h " : "") + m + "m " + s + "s"; }
+function fmtShort(sec){ sec = Math.max(0, Math.round(sec)); return sec < 60 ? sec + "s" : Math.floor(sec/60) + "m " + (sec%60) + "s"; }
+function num(v, d){ var n = parseFloat(v); return isNaN(n) ? d : n; }
+function qScore(q){ return num(q.correct_score, CFG.defaultCorrectScore); }
+function qNeg(q){ return num(q.negative_score, CFG.defaultNegativeScore); }
+function r2(v){ return Math.round(v*100)/100; }
 
-/* ================= HEADER / STATIC TEXT ================= */
-function initStaticText(){
-  document.title = CFG.examTitle + " | " + CFG.sectionLabel;
-  $("wTitle").textContent = CFG.examTitle;
-  $("wSub").textContent = CFG.sectionLabel;
-  $("wTotalQ").textContent = N;
-  $("wTotalTime").textContent = Math.round(CFG.totalTimeSeconds/60);
-  $("wMarks").textContent = "+" + CFG.correctScoreDisplay + " / -" + CFG.negativeScoreDisplay;
-
-  $("hdrTitle").textContent = CFG.examTitle;
-  $("hdrSub").textContent = CFG.sectionLabel;
-  $("solHdrTitle").textContent = CFG.examTitle;
-  $("sectionTab").textContent = CFG.sectionLabel;
-  $("solSectionTab").textContent = CFG.sectionLabel;
-  $("paletteTitle").textContent = CFG.sectionLabel + " :";
-  $("solPaletteTitle").textContent = CFG.sectionLabel + " :";
-  $("resSub").textContent = CFG.examTitle + " \u2014 " + CFG.sectionLabel;
-
-  if(hasHindi){
-    var opt = '<option value="en">English</option><option value="hi">Hindi</option>';
-    $("langSelect").innerHTML = opt;
-    $("solLangSelect").innerHTML = opt;
-  }
+var toastT = null;
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove("show"); }, 2600);
 }
 
-/* ================= WELCOME ================= */
-function initWelcome(){
-  $("startTestBtn").addEventListener("click", function(){
-    state.instantFeedback = $("instantFeedbackToggle").checked;
-    state.phase = "testing";
-    state.startedAt = state.startedAt || Date.now();
-    saveState();
-    enterTestPage();
-    try{
-      var el = document.documentElement;
-      if(el.requestFullscreen){ el.requestFullscreen().catch(function(){}); }
-    }catch(e){}
-  });
+/* ================= THEME / ZOOM / FULLSCREEN ================= */
+function setThemeIcon(){
+  var dark = document.documentElement.getAttribute("data-theme") === "dark";
+  $all(".ic-theme").forEach(function(e){ e.innerHTML = dark ? "&#9788;" : "&#9790;"; });
+  var m = document.querySelector('meta[name="theme-color"]'); if(m) m.content = dark ? "#171a22" : "#ffffff";
 }
-
-function enterTestPage(){
-  $("welcomePage").classList.add("hidden-page");
-  $("testPage").classList.remove("hidden-page");
-  $("langSelect").value = state.lang;
-  applyPaletteCollapse();
-  renderQuestion();
-  startTimer();
+function toggleDark(){
+  var dark = document.documentElement.getAttribute("data-theme") === "dark";
+  if(dark) document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme","dark");
+  try{ localStorage.setItem("sscscholars_theme", dark ? "light" : "dark"); }catch(e){}
+  setThemeIcon();
 }
-
-/* ================= STATUS / PALETTE ================= */
-function statusCounts(){
-  var c = {notvisited:0, notanswered:0, answered:0, marked:0, markedans:0};
-  for(var i=0;i<N;i++){ c[state.q[i].status]++; }
-  return c;
-}
-
-function renderPalette(){
-  var html = "";
-  for(var i=0;i<N;i++){
-    var st = state.q[i].status;
-    var cur = (i === state.current) ? " current" : "";
-    html += '<button type="button" class="qnum ' + st + cur + '" onclick="goTo(' + i + ')">' + (i+1) + '</button>';
-  }
-  $("paletteGrid").innerHTML = html;
-  var c = statusCounts();
-  $("stAnswered").textContent = c.answered;
-  $("stNotAnswered").textContent = c.notanswered;
-  $("stMarked").textContent = c.marked;
-  $("stAnsMarked").textContent = c.markedans;
-  $("stNotVisited").textContent = c.notvisited;
-  $("totalAnsweredTop").textContent = c.answered + c.markedans;
-}
-
-function togglePalette(){
-  state.paletteHidden = !state.paletteHidden;
-  applyPaletteCollapse();
-  saveState();
-}
-function applyPaletteCollapse(){
-  var p = $("paletteWrap");
-  p.classList.toggle("hidden", state.paletteHidden);
-  $("collapseArrow").innerHTML = state.paletteHidden ? "&#9654;" : "&#9664;";
-}
-
-/* ================= QUESTION RENDER ================= */
-function renderQuestion(){
-  var i = state.current;
-  var q = QUESTIONS[i];
-  var st = state.q[i];
-  if(st.status === "notvisited") st.status = "notanswered";
-
-  $("qNoHeading").textContent = "Question No " + (i+1);
-  var topicEl = $("qTopicTag");
-  if(q.topic){ topicEl.textContent = q.topic; topicEl.style.display = "inline-block"; }
-  else { topicEl.style.display = "none"; }
-
-  $("qText").innerHTML = qHtml(q, state.lang);
-  var imgEl = $("qImg");
-  if(q.question_image){ imgEl.innerHTML = '<img src="'+q.question_image+'" alt="question image">'; imgEl.style.display = "block"; }
-  else { imgEl.style.display = "none"; imgEl.innerHTML = ""; }
-
-  var optsHtml = "";
-  OPT_KEYS.forEach(function(key, idx){
-    var opt = q.options[key];
-    if(!opt) return;
-    var val = String(idx+1);
-    var checked = st.selected === val ? "checked" : "";
-    var cls = st.selected === val ? "selected" : "";
-    var img = opt.image ? '<div class="qimg"><img src="'+opt.image+'" alt="option image"></div>' : "";
-    optsHtml += '<label class="' + cls + '" data-opt="' + val + '">' +
-      '<input type="radio" name="opt" value="' + val + '" ' + checked + ' onclick="selectOption(\'' + val + '\')">' +
-      OPT_LETTERS[idx] + ') ' + optHtml(q, key, state.lang) + img +
-      '</label>';
-  });
-  $("qOptions").innerHTML = optsHtml;
-  decorateImages($("qText")); decorateImages($("qImg")); decorateImages($("qOptions"));
-
-  $("showSolBtn").style.display = state.instantFeedback ? "inline-flex" : "none";
-  $("showSolBtn").textContent = st.solutionSeen ? "Hide Solution" : "Show Solution";
-
-  applyFeedback();
-  renderPalette();
-  saveState();
-}
-
-function applyFeedback(){
-  var i = state.current;
-  var q = QUESTIONS[i];
-  var st = state.q[i];
-  var fb = $("fbStrip");
-  fb.className = "fb-strip";
-  fb.textContent = "";
-
-  var labels = $all("#qOptions label");
-  labels.forEach(function(lab){
-    lab.classList.remove("selected","fb-correct","fb-wrong");
-    var badge = lab.querySelector(".opt-badge");
-    if(badge) badge.remove();
-    var optKey = lab.getAttribute("data-opt");
-    var isSel = optKey === st.selected;
-    if(isSel) lab.classList.add("selected");
-
-    if(state.instantFeedback && st.selected){
-      var isCorrect = optKey === q.answer;
-      if(isCorrect){
-        lab.classList.add("fb-correct");
-        var b1 = document.createElement("span");
-        b1.className = "opt-badge ok";
-        b1.textContent = "Correct";
-        lab.appendChild(b1);
-      }
-      if(isSel && !isCorrect){
-        lab.classList.add("fb-wrong");
-        var b2 = document.createElement("span");
-        b2.className = "opt-badge no";
-        b2.textContent = "Your pick";
-        lab.appendChild(b2);
-      }
-    }
-  });
-
-  if(state.instantFeedback && st.selected){
-    var correct = st.selected === q.answer;
-    fb.classList.add("show", correct ? "ok" : "no");
-    fb.textContent = correct ? "Correct answer!" : "Incorrect. The correct option is highlighted in green.";
-  }
-
-  renderLiveSolutionBox();
-}
-
-function renderLiveSolutionBox(){
-  var i = state.current;
-  var q = QUESTIONS[i];
-  var st = state.q[i];
-  var box = $("liveSolutionBox");
-  if(state.instantFeedback && st.solutionSeen){
-    box.style.display = "block";
-    box.innerHTML = "<h4>Solution</h4><p><b>Correct Answer:</b> Option " + q.answer + "</p>" +
-      (solHtml(q, state.lang) || "<i>No solution text provided.</i>");
-    decorateImages(box);
-  } else {
-    box.style.display = "none";
-    box.innerHTML = "";
-  }
-}
-
-function toggleLiveSolution(){
-  var st = state.q[state.current];
-  st.solutionSeen = !st.solutionSeen;
-  saveState();
-  $("showSolBtn").textContent = st.solutionSeen ? "Hide Solution" : "Show Solution";
-  renderLiveSolutionBox();
-}
-
-function $all(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
-
-/* ================= INTERACTIONS ================= */
-function selectOption(val){
-  state.q[state.current].selected = val;
-  applyFeedback();
-  saveState();
-}
-
-function commitStatusFromSelection(i){
-  var st = state.q[i];
-  var wasMarked = (st.status === "marked" || st.status === "markedans");
-  if(st.selected !== null){
-    st.status = wasMarked ? "markedans" : "answered";
-  } else {
-    st.status = wasMarked ? "marked" : "notanswered";
-  }
-}
-
-function saveAndNext(){
-  commitStatusFromSelection(state.current);
-  goTo(Math.min(state.current+1, N-1));
-}
-
-function markForReview(){
-  var st = state.q[state.current];
-  st.status = st.selected !== null ? "markedans" : "marked";
-  goTo(Math.min(state.current+1, N-1));
-}
-
-function clearResponse(){
-  var st = state.q[state.current];
-  st.selected = null;
-  st.solutionSeen = false;
-  var wasMarked = (st.status === "marked" || st.status === "markedans");
-  st.status = wasMarked ? "marked" : "notanswered";
-  renderQuestion();
-}
-
-function goPrev(){ goTo(Math.max(state.current-1, 0)); }
-function goTo(i){ if(i<0||i>=N) return; state.current = i; renderQuestion(); }
-
-function setLang(v){ state.lang = v; saveState(); renderQuestion(); }
-function setSolLang(v){ state.solLang = v; saveState(); renderSolQuestion(); }
-
-/* ================= ZOOM / FULLSCREEN ================= */
 var ZOOM_KEY = "sscscholars_zoom_level";
 var zoomLevel = 1;
 try{ var zz = parseFloat(localStorage.getItem(ZOOM_KEY)); if(zz >= 0.6 && zz <= 3) zoomLevel = zz; }catch(e){}
-function zoomChange(dir){
-  zoomLevel = Math.min(3, Math.max(0.6, Math.round((zoomLevel + dir*0.1)*100)/100));
-  applyZoom();
-}
+function zoomChange(dir){ zoomLevel = Math.min(3, Math.max(0.6, Math.round((zoomLevel + dir*0.1)*100)/100)); applyZoom(); }
 function zoomReset(){ zoomLevel = 1; applyZoom(); }
 function applyZoom(){
-  document.documentElement.style.setProperty("--zoom", zoomLevel);
-  var labs = document.querySelectorAll(".zoomLabel");
-  for(var i=0;i<labs.length;i++){ labs[i].textContent = Math.round(zoomLevel*100) + "%"; }
+  document.documentElement.style.setProperty("--z", zoomLevel);
+  $all(".zoomLabel").forEach(function(l){ l.textContent = Math.round(zoomLevel*100) + "%"; });
   try{ localStorage.setItem(ZOOM_KEY, String(zoomLevel)); }catch(e){}
   applyImgZoom();
 }
+function toggleFullscreen(){
+  try{
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen().catch(function(){}); }
+  }catch(e){}
+}
+document.addEventListener("fullscreenchange", function(){
+  var on = !!document.fullscreenElement;
+  var a = $("fsEnter"), b = $("fsExit");
+  if(a) a.style.display = on ? "none" : "block";
+  if(b) b.style.display = on ? "block" : "none";
+});
 
 /* ---- images inside question / option / solution HTML follow the same zoom ---- */
 function sizeImg(img){
@@ -520,7 +299,7 @@ function lbIsOpen(){ return $("imgLightbox").classList.contains("show"); }
     var img = wrap.querySelector("img");
     if(!img) return;
     var isBtn = t.classList.contains("zbtn");
-    var inOption = !!t.closest(".options label");
+    var inOption = !!t.closest(".opt-radio");
     if(isBtn || !inOption){
       ev.preventDefault(); ev.stopPropagation();
       lbOpen(img.currentSrc || img.src);
@@ -528,62 +307,287 @@ function lbIsOpen(){ return $("imgLightbox").classList.contains("show"); }
   }, true);
 })();
 
-function toggleFullscreen(){
-  try{
-    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
-    else { document.exitFullscreen().catch(function(){}); }
-  }catch(e){}
-}
-document.addEventListener("fullscreenchange", function(){
-  var btn = $("fsBtn");
-  if(btn) btn.textContent = document.fullscreenElement ? "Exit Full Screen" : "Full Screen";
-});
 
-/* ================= PAUSE / TIMER ================= */
-function togglePause(){
-  if(state.phase !== "testing" && state.phase !== "paused") return;
-  if(state.phase === "testing"){
-    state.phase = "paused";
-    clearInterval(timerHandle);
-    $("pauseOverlay").classList.add("show");
+/* ================= SCREEN SWITCHING ================= */
+function showScreen(id){
+  ["welcomePage","testPage","resultPage","solutionPage"].forEach(function(s){
+    $(s).classList.toggle("hidden-page", s !== id);
+  });
+  document.body.classList.remove("pal-open");
+  $("toast").classList.remove("show");
+  window.scrollTo(0,0);
+}
+
+/* ================= STATIC TEXT ================= */
+function initStaticText(){
+  var brand = (window.HUB_CONFIG && window.HUB_CONFIG.brand) || "THE SSC SCHOLARS OFFICIAL";
+  document.title = CFG.examTitle + " | " + brand;
+  var mins = Math.round(CFG.totalTimeSeconds/60);
+  var posNeg = "-" + CFG.negativeScoreDisplay;
+  $("wsHeaderTitle").textContent = CFG.examTitle;
+  $("resHdrTitle").textContent = CFG.examTitle;
+  $("ovTime").textContent = mins;
+  $("ovQ").textContent = N;
+  $("ovCor").textContent = "+" + CFG.correctScoreDisplay;
+  $("ovNeg").textContent = posNeg;
+  $("ovSec").textContent = CFG.sectionLabel;
+  $("ovSecQ").textContent = N;
+  var mx = 0; QUESTIONS.forEach(function(q){ mx += qScore(q); });
+  $("ovSecM").textContent = r2(mx);
+  $("ovSecN").textContent = posNeg;
+  $("insCor").textContent = CFG.correctScoreDisplay;
+  $("insNeg").textContent = CFG.negativeScoreDisplay;
+
+  $("hdrTitle").textContent = CFG.examTitle;
+  $("hdrSub").textContent = CFG.sectionLabel;
+  $("solHdrTitle").textContent = CFG.examTitle;
+  $("sectionTab").textContent = CFG.sectionLabel;
+  $("secInfo").textContent = N + " questions \u00B7 " + mins + " min";
+  $("paletteTitle").textContent = "Section : " + CFG.sectionLabel;
+  $("paletteSecHead").textContent = CFG.sectionLabel;
+  $("solPaletteTitle").textContent = "Section : " + CFG.sectionLabel;
+  $("solPaletteSecHead").textContent = CFG.sectionLabel;
+  $("resTitle").textContent = CFG.examTitle;
+  $("resSub").textContent = CFG.sectionLabel;
+  $("qMarks").innerHTML = '<span class="p">+' + CFG.correctScoreDisplay + '</span> / <span class="n">-' + CFG.negativeScoreDisplay + '</span>';
+
+  if(hasHindi){
+    $("langBox").style.display = "block"; $("langWrap").style.display = "flex"; $("solLangWrap").style.display = "flex";
   } else {
-    state.phase = "testing";
-    $("pauseOverlay").classList.remove("show");
-    startTimer();
+    $("optBox").querySelector(".opt-practice").style.flex = "1";
   }
+  setThemeIcon();
+}
+
+/* ================= INSTRUCTIONS ================= */
+function wsPage(n){
+  $("wsPage1").classList.toggle("active", n === 1);
+  $("wsPage2").classList.toggle("active", n === 2);
+}
+function initWelcome(){
+  $("instrConfirm").addEventListener("change", function(){ $("startTestBtn").disabled = !this.checked; });
+  $("startTestBtn").addEventListener("click", function(){
+    if(!$("instrConfirm").checked) return;
+    state.instantFeedback = $("instantFeedbackToggle").checked;
+    if(hasHindi) state.lang = $("welcomeLang").value;
+    state.phase = "testing";
+    state.startedAt = state.startedAt || Date.now();
+    saveState();
+    enterTestPage();
+    try{ var el = document.documentElement; if(el.requestFullscreen){ el.requestFullscreen().catch(function(){}); } }catch(e){}
+  });
+}
+function enterTestPage(){
+  showScreen("testPage");
+  $("langSelect").value = state.lang;
+  applyPalState();
+  loadQuestion(state.current, true);
+  startTimer();
+}
+
+/* ================= STATUS / PALETTE ================= */
+function statusCounts(){
+  var c = {notvisited:0, notanswered:0, answered:0, marked:0, markedans:0};
+  for(var i=0;i<N;i++){ c[state.q[i].status]++; }
+  return c;
+}
+function paletteButton(i, cls, extra){
+  return '<button type="button" class="qnum ' + cls + (extra||"") + '" onclick="' + (cls.indexOf("sol") === 0 ? "solGoTo(" : "goTo(") + i + ')"><span class="shape"></span><span class="n">' + (i+1) + '</span></button>';
+}
+function renderPalette(){
+  var html = "";
+  for(var i=0;i<N;i++){ html += paletteButton(i, state.q[i].status, i === state.current ? " current" : ""); }
+  $("paletteGrid").innerHTML = html;
+  var c = statusCounts();
+  var pills = $all("#paletteWrap .pal-legend .pal");
+  var vals = [c.answered, c.notanswered, c.notvisited, c.marked, c.markedans];
+  pills.forEach(function(p, k){ p.textContent = vals[k]; });
+  var cur = $("paletteGrid").querySelector(".current");
+  if(cur && cur.scrollIntoView){ try{ cur.scrollIntoView({block:"nearest"}); }catch(e){} }
+}
+function togglePalette(){ state.palHidden = !state.palHidden; applyPalState(); saveState(); }
+function applyPalState(){
+  document.body.classList.toggle("pal-hidden", !!state.palHidden);
+  $("collapseArrow").innerHTML = state.palHidden ? "&#9664;" : "&#9654;";
+  $("solCollapseArrow").innerHTML = state.solPalHidden ? "&#9664;" : "&#9654;";
+}
+function openMobilePalette(){ document.body.classList.add("pal-open"); }
+function closeMobilePalette(){ document.body.classList.remove("pal-open"); }
+
+/* ================= QUESTION RENDER ================= */
+function loadQuestion(i, firstLoad){
+  var st = state.q[i];
+  state.current = i;
+  if(st.status === "notvisited") st.status = "notanswered";
+  draft = st.selected;
+  renderQuestion();
+  if(!firstLoad) window.scrollTo(0,0);
+}
+
+function renderQuestion(){
+  var i = state.current, q = QUESTIONS[i], st = state.q[i];
+  $("qNoHeading").textContent = i + 1;
+  var topicEl = $("qTopicTag");
+  if(q.topic){ topicEl.textContent = q.topic; topicEl.style.display = "inline-block"; } else { topicEl.style.display = "none"; }
+
+  $("qText").innerHTML = qHtml(q, state.lang);
+  var imgEl = $("qImg");
+  if(q.question_image){ imgEl.innerHTML = '<img src="' + q.question_image + '" alt="question image">'; imgEl.style.display = "block"; }
+  else { imgEl.style.display = "none"; imgEl.innerHTML = ""; }
+
+  var html = "";
+  OPT_KEYS.forEach(function(key, idx){
+    var opt = q.options[key];
+    if(!opt) return;
+    var val = String(idx+1);
+    var img = opt.image ? '<div class="qimg"><img src="' + opt.image + '" alt="option image"></div>' : "";
+    html += '<div class="opt-row" data-opt="' + val + '">' +
+      '<div class="opt-radio" title="Tap the circle to select" onclick="pickOption(\'' + val + '\', event)"><input type="radio" name="opt" value="' + val + '" tabindex="-1"></div>' +
+      '<div class="opt-body">' + optHtml(q, key, state.lang) + img + '</div></div>';
+  });
+  $("qOptions").innerHTML = html;
+  decorateImages($("qText")); decorateImages($("qImg")); decorateImages($("qOptions"));
+
+  $("showSolBtn").style.display = state.instantFeedback ? "inline-block" : "none";
+  $("showSolBtn").textContent = st.solutionSeen ? "Hide Solution" : "Show Solution";
+  $("prevBtn").disabled = (i === 0);
+  paintSelection();
+  renderPalette();
   saveState();
 }
 
+function paintSelection(){
+  var i = state.current, q = QUESTIONS[i], st = state.q[i];
+  var fb = $("fbStrip");
+  fb.className = "fb-strip"; fb.textContent = "";
+  $all("#qOptions .opt-row").forEach(function(lab){
+    var key = lab.getAttribute("data-opt");
+    var sel = key === draft;
+    lab.classList.toggle("selected", sel);
+    lab.querySelector("input").checked = sel;
+    lab.classList.remove("fb-correct","fb-wrong");
+    var old = lab.querySelector(".opt-badge"); if(old) old.remove();
+    if(state.instantFeedback && draft){
+      var ok = key === q.answer;
+      if(ok){ lab.classList.add("fb-correct"); lab.insertAdjacentHTML("beforeend", '<span class="opt-badge ok">Correct</span>'); }
+      else if(sel){ lab.classList.add("fb-wrong"); lab.insertAdjacentHTML("beforeend", '<span class="opt-badge no">Your pick</span>'); }
+    }
+  });
+  if(state.instantFeedback && draft){
+    var correct = draft === q.answer;
+    fb.classList.add("show", correct ? "ok" : "no");
+    fb.textContent = correct ? "Correct answer!" : "Incorrect. The correct option is highlighted in green.";
+  }
+  $("unsavedHint").style.display = (draft !== st.selected) ? "block" : "none";
+  renderLiveSolutionBox();
+}
+
+function renderLiveSolutionBox(){
+  var i = state.current, q = QUESTIONS[i], st = state.q[i], box = $("liveSolutionBox");
+  if(state.instantFeedback && st.solutionSeen){
+    box.style.display = "block";
+    box.innerHTML = "<h4>Solution</h4><p><b>Correct Answer:</b> Option " + OPT_LETTERS[(parseInt(q.answer,10)||1)-1] + "</p>" +
+      (solHtml(q, state.lang) || "<i>No solution text provided.</i>");
+    decorateImages(box);
+  } else { box.style.display = "none"; box.innerHTML = ""; }
+}
+function toggleLiveSolution(){
+  var st = state.q[state.current];
+  st.solutionSeen = !st.solutionSeen; saveState();
+  $("showSolBtn").textContent = st.solutionSeen ? "Hide Solution" : "Show Solution";
+  renderLiveSolutionBox();
+}
+
+/* ================= INTERACTIONS ================= */
+function pickOption(val, ev){
+  if(ev) ev.preventDefault();
+  if(state.phase !== "testing") return;
+  draft = (draft === val) ? null : val;     /* clicking the chosen option again deselects it */
+  paintSelection();
+}
+function applyStatusFor(i){
+  var st = state.q[i];
+  var wasMarked = (st.status === "marked" || st.status === "markedans");
+  st.status = st.selected !== null ? (wasMarked ? "markedans" : "answered") : (wasMarked ? "marked" : "notanswered");
+}
+function commitDraft(){
+  var st = state.q[state.current];
+  st.selected = draft;
+  applyStatusFor(state.current);
+}
+function saveAndNext(){
+  if(state.phase !== "testing") return;
+  commitDraft();
+  if(state.current < N-1) loadQuestion(state.current + 1); else { renderQuestion(); toast("Saved. This is the last question."); }
+}
+function markForReview(){
+  if(state.phase !== "testing") return;
+  var st = state.q[state.current];
+  st.selected = draft;
+  st.status = st.selected !== null ? "markedans" : "marked";
+  if(state.current < N-1) loadQuestion(state.current + 1); else { renderQuestion(); toast("Marked for review."); }
+}
+function clearResponse(){
+  if(state.phase !== "testing") return;
+  var st = state.q[state.current];
+  draft = null; st.selected = null; st.solutionSeen = false;
+  var wasMarked = (st.status === "marked" || st.status === "markedans");
+  st.status = wasMarked ? "marked" : "notanswered";
+  renderQuestion();
+}
+function leaveWarn(){
+  var st = state.q[state.current];
+  if(draft !== st.selected && draft !== null) toast("Your last selection was not saved. Use Save & Next to save an answer.");
+}
+function goPrev(){ if(state.current > 0){ leaveWarn(); loadQuestion(state.current - 1); } }
+function goTo(i){
+  if(i < 0 || i >= N || state.phase !== "testing") return;
+  if(i !== state.current) leaveWarn();
+  loadQuestion(i);
+  closeMobilePalette();
+}
+function setLang(v){ state.lang = v; saveState(); renderQuestion(); }
+
+/* ================= PAUSE / TIMER ================= */
+function openPause(){ if(state.phase === "testing") $("pauseModal").classList.add("show"); }
+function closePause(){ $("pauseModal").classList.remove("show"); }
+function doPause(){
+  closePause();
+  state.phase = "paused";
+  clearInterval(timerHandle);
+  saveState();
+  $("pauseOverlay").classList.add("show");
+}
+function resumeTest(){
+  state.phase = "testing";
+  $("pauseOverlay").classList.remove("show");
+  saveState();
+  startTimer();
+}
 function startTimer(){
   if(timerHandle) clearInterval(timerHandle);
   renderTime();
   timerHandle = setInterval(function(){
     if(state.phase !== "testing") return;
     state.timeLeft -= 1;
-    if(state.timeLeft <= 0){
-      state.timeLeft = 0;
-      renderTime();
-      clearInterval(timerHandle);
-      doSubmit();
-      return;
-    }
+    state.q[state.current].t += 1;
+    if(state.timeLeft <= 0){ state.timeLeft = 0; renderTime(); clearInterval(timerHandle); toast("Time is up. Submitting your test."); doSubmit(true); return; }
     renderTime();
     if(state.timeLeft % 5 === 0) saveState();
   }, 1000);
 }
-
 function renderTime(){
-  var box = $("timeleftBox");
   $("timeLeft").textContent = fmtClock(state.timeLeft);
+  var box = $("timeLeft").parentNode;
   if(box) box.classList.toggle("low", state.timeLeft <= 120);
 }
 
 /* ================= SUBMIT ================= */
-function confirmSubmit(){
-  renderPalette();
+function openSubmit(){
+  if(state.phase !== "testing") return;
   var c = statusCounts();
   $("mAnswered").textContent = c.answered + c.markedans;
-  $("mNotAnswered").textContent = c.notanswered;
+  $("mNotAnswered").textContent = c.notanswered + c.marked;
   $("mMarked").textContent = c.marked + c.markedans;
   $("mNotVisited").textContent = c.notvisited;
   $("submitModal").classList.add("show");
@@ -591,32 +595,23 @@ function confirmSubmit(){
 function closeSubmitModal(){ $("submitModal").classList.remove("show"); }
 
 function computeResult(){
-  var correct=0, wrong=0, unattempt=0, marks=0, negMarksTotal=0, maxMarks=0;
+  var correct=0, wrong=0, unattempt=0, marks=0, neg=0, maxMarks=0;
   for(var i=0;i<N;i++){
-    var q = QUESTIONS[i];
-    var sel = state.q[i].selected;
-    var cs = (q.correct_score !== undefined && q.correct_score !== null && q.correct_score !== "") ? parseFloat(q.correct_score) : CFG.defaultCorrectScore;
-    var ns = (q.negative_score !== undefined && q.negative_score !== null && q.negative_score !== "") ? parseFloat(q.negative_score) : CFG.defaultNegativeScore;
+    var q = QUESTIONS[i], sel = state.q[i].selected, cs = qScore(q), ns = qNeg(q);
     maxMarks += cs;
     if(sel === null || sel === undefined){ unattempt++; }
     else if(sel === q.answer){ correct++; marks += cs; }
-    else { wrong++; negMarksTotal += ns; marks -= ns; }
+    else { wrong++; neg += ns; marks -= ns; }
   }
   var attempted = correct + wrong;
-  var accuracy = attempted > 0 ? (correct/attempted*100) : 0;
   var timeTaken = CFG.totalTimeSeconds - state.timeLeft;
   return {
-    correct: correct, wrong: wrong, unattempt: unattempt,
-    score: Math.round(marks*100)/100,
-    maxMarks: Math.round(maxMarks*100)/100,
-    negMarksTotal: Math.round(negMarksTotal*100)/100,
-    accuracy: Math.round(accuracy*10)/10,
-    timeTaken: timeTaken,
-    avgTime: Math.round(timeTaken / N),
-    total: N
+    correct: correct, wrong: wrong, unattempt: unattempt, attempted: attempted,
+    score: r2(marks), maxMarks: r2(maxMarks), negMarksTotal: r2(neg),
+    accuracy: attempted > 0 ? Math.round(correct/attempted*1000)/10 : 0,
+    timeTaken: timeTaken, avgTime: Math.round(timeTaken / N), total: N
   };
 }
-
 function doSubmit(){
   closeSubmitModal();
   clearInterval(timerHandle);
@@ -625,122 +620,166 @@ function doSubmit(){
   state.result = computeResult();
   saveState();
   try{ if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(function(){}); } }catch(e){}
-  $("testPage").classList.add("hidden-page");
   renderResult();
-  $("resultPage").classList.remove("hidden-page");
+  showScreen("resultPage");
 }
 
+/* ================= RESULT / ANALYSIS ================= */
+function qOutcome(i){
+  var sel = state.q[i].selected, q = QUESTIONS[i];
+  if(sel === null || sel === undefined) return "skipped";
+  return sel === q.answer ? "correct" : "wrong";
+}
 function renderResult(){
   var r = state.result || computeResult();
   $("finalScore").textContent = r.score;
+  $("finalMax").textContent = "/ " + r.maxMarks;
   $("stCorrect").textContent = r.correct;
   $("stWrong").textContent = r.wrong;
   $("stUnattempt").textContent = r.unattempt;
   $("stAccuracy").textContent = r.accuracy + "%";
-  $("stMaxMarks").textContent = r.maxMarks;
-  $("stNegMarks").textContent = r.negMarksTotal;
   $("stTimeTaken").textContent = fmtLong(r.timeTaken);
-  $("stAvgTime").textContent = fmtLong(r.avgTime);
-}
+  $("stAvgTime").textContent = fmtShort(r.avgTime);
+  $("stNegMarks").textContent = r.negMarksTotal;
+  $("stAttempted").textContent = r.attempted + " / " + r.total;
 
-function restartTest(){
-  if(confirm("This will erase your current attempt and start over. Continue?")){
-    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
-    window.location.reload();
-  }
-}
+  var spent = 0; for(var k=0;k<N;k++) spent += state.q[k].t;
+  $("secTable").innerHTML =
+    "<thead><tr><th>Section</th><th>Questions</th><th>Attempted</th><th>Correct</th><th>Wrong</th><th>Score</th><th>Accuracy</th><th>Time</th></tr></thead><tbody><tr>" +
+    "<td>" + escapeHtml(CFG.sectionLabel) + "</td><td>" + r.total + "</td><td>" + r.attempted + "</td><td>" + r.correct + "</td><td>" + r.wrong +
+    "</td><td><b>" + r.score + "</b> / " + r.maxMarks + "</td><td>" + r.accuracy + "%</td><td>" + fmtShort(spent || r.timeTaken) + "</td></tr></tbody>";
 
-/* ================= SOLUTIONS PAGE ================= */
-function solStatus(i){
-  var sel = state.q[i].selected;
-  var q = QUESTIONS[i];
-  if(sel === null || sel === undefined) return "skipped";
-  return sel === q.answer ? "correct" : "wrong";
-}
-
-function renderSolPalette(){
-  var html = "";
+  /* topic-wise */
+  var topics = {}, order = [];
   for(var i=0;i<N;i++){
-    var st = solStatus(i);
-    var cls = st === "correct" ? "solcorrect" : st === "wrong" ? "solwrong" : "solskipped";
-    var cur = (i === state.solIndex) ? " current" : "";
-    html += '<button type="button" class="qnum ' + cls + cur + '" onclick="solGoTo(' + i + ')">' + (i+1) + '</button>';
+    var tp = QUESTIONS[i].topic || "General";
+    if(!topics[tp]){ topics[tp] = {n:0, att:0, c:0, w:0, t:0}; order.push(tp); }
+    var o = qOutcome(i), T = topics[tp];
+    T.n++; T.t += state.q[i].t;
+    if(o !== "skipped") T.att++;
+    if(o === "correct") T.c++; else if(o === "wrong") T.w++;
+  }
+  order.sort(function(a,b){ return topics[b].n - topics[a].n; });
+  var th = "<thead><tr><th>Topic</th><th>Qs</th><th>Attempted</th><th>Correct</th><th>Wrong</th><th>Accuracy</th><th>Avg time</th></tr></thead><tbody>";
+  order.forEach(function(tp){
+    var T = topics[tp], acc = T.att ? Math.round(T.c/T.att*100) : 0;
+    th += "<tr><td>" + escapeHtml(tp) + "</td><td>" + T.n + "</td><td>" + T.att + "</td><td>" + T.c + "</td><td>" + T.w +
+      '</td><td><span class="bar"><i style="width:' + acc + '%"></i></span>' + acc + "%</td><td>" + fmtShort(T.t / T.n) + "</td></tr>";
+  });
+  $("topicTable").innerHTML = th + "</tbody>";
+
+  /* time per question */
+  var mx = 1; for(var m=0;m<N;m++) mx = Math.max(mx, state.q[m].t);
+  var bars = "";
+  for(var b=0;b<N;b++){
+    var oc = qOutcome(b), cl = oc === "correct" ? "tb-c" : oc === "wrong" ? "tb-w" : "tb-s";
+    bars += '<div class="' + cl + '" style="height:' + Math.max(3, Math.round(state.q[b].t / mx * 100)) + '%" title="Q' + (b+1) + ": " + fmtShort(state.q[b].t) + '"></div>';
+  }
+  $("timeBars").innerHTML = bars;
+}
+
+function restartTest(){ $("reattemptModal").classList.add("show"); }
+function doRestart(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  window.location.reload();
+}
+
+/* ================= SOLUTIONS ================= */
+function solFiltered(){
+  var f = state.solFilter, out = [];
+  for(var i=0;i<N;i++){ if(f === "all" || qOutcome(i) === f) out.push(i); }
+  return out;
+}
+function renderSolPalette(){
+  var html = "", f = state.solFilter;
+  for(var i=0;i<N;i++){
+    var o = qOutcome(i);
+    var cls = o === "correct" ? "solcorrect" : o === "wrong" ? "solwrong" : "solskipped";
+    var extra = (i === state.solIndex ? " current" : "") + ((f !== "all" && o !== f) ? " dim" : "");
+    html += paletteButton(i, cls, extra);
   }
   $("solPaletteGrid").innerHTML = html;
+  var c = {correct:0, wrong:0, skipped:0};
+  for(var k=0;k<N;k++) c[qOutcome(k)]++;
+  var pills = $all("#solPaletteWrap .pal-legend .pal");
+  [c.correct, c.wrong, c.skipped].forEach(function(v, idx){ if(pills[idx]) pills[idx].textContent = v; });
+  var cur = $("solPaletteGrid").querySelector(".current");
+  if(cur && cur.scrollIntoView){ try{ cur.scrollIntoView({block:"nearest"}); }catch(e){} }
 }
-
 function renderSolQuestion(){
-  var i = state.solIndex;
-  var q = QUESTIONS[i];
-  var sel = state.q[i].selected;
-  var st = solStatus(i);
-
-  $("solQNoHeading").textContent = "Question No " + (i+1);
-  var badge = st === "correct" ? '<span class="sol-badge correct">Correct</span>'
-            : st === "wrong" ? '<span class="sol-badge wrong">Wrong</span>'
-            : '<span class="sol-badge skipped">Skipped</span>';
-  $("solBadgeHolder").innerHTML = badge;
+  var i = state.solIndex, q = QUESTIONS[i], sel = state.q[i].selected, o = qOutcome(i);
+  $("solQNoHeading").textContent = i + 1;
+  $("solBadgeHolder").innerHTML = '<span class="sol-badge ' + o + '">' + (o === "correct" ? "Correct" : o === "wrong" ? "Wrong" : "Skipped") + "</span>";
   $("solLangSelect").value = state.solLang;
+  $("solMarks").innerHTML = '<span class="p">+' + r2(qScore(q)) + '</span> / <span class="n">-' + r2(qNeg(q)) + '</span>';
+  var tp = $("solTopicTag");
+  if(q.topic){ tp.textContent = q.topic; tp.style.display = "inline-block"; } else { tp.style.display = "none"; }
 
   $("solQText").innerHTML = qHtml(q, state.solLang);
   var imgEl = $("solQImg");
-  if(q.question_image){ imgEl.innerHTML = '<img src="'+q.question_image+'" alt="question image">'; imgEl.style.display = "block"; }
+  if(q.question_image){ imgEl.innerHTML = '<img src="' + q.question_image + '" alt="question image">'; imgEl.style.display = "block"; }
   else { imgEl.style.display = "none"; imgEl.innerHTML = ""; }
 
-  var optsHtml = "";
+  var html = "";
   OPT_KEYS.forEach(function(key, idx){
     var opt = q.options[key];
     if(!opt) return;
-    var val = String(idx+1);
-    var cls = "", tag = "";
-    if(val === q.answer){ cls = "right"; tag = '<span class="tagmini">CORRECT</span>'; }
-    else if(val === sel && sel !== q.answer){ cls = "picked-wrong"; tag = '<span class="tagmini">YOUR ANSWER</span>'; }
-    optsHtml += '<div class="soloption ' + cls + '">' + OPT_LETTERS[idx] + ') ' + optHtml(q, key, state.solLang) + ' ' + tag + '</div>';
+    var val = String(idx+1), cls = "", tag = "";
+    if(val === q.answer){ cls = " right"; tag = '<span class="tagmini">CORRECT</span>'; }
+    else if(val === sel){ cls = " picked-wrong"; tag = '<span class="tagmini">YOUR ANSWER</span>'; }
+    html += '<div class="soloption' + cls + '"><span class="opt-letter">' + OPT_LETTERS[idx] + ')</span><span class="opt-body">' + optHtml(q, key, state.solLang) + '</span>' + tag + '</div>';
   });
-  $("solOptions").innerHTML = optsHtml;
-  decorateImages($("solQText")); decorateImages($("solQImg")); decorateImages($("solOptions"));
+  $("solOptions").innerHTML = html;
 
-  var explHead = '<h4>Explanation</h4>';
-  $("solExpl").innerHTML = explHead + (solHtml(q, state.solLang) || "<i>No solution text provided.</i>");
-  decorateImages($("solExpl"));
+  var ans = parseInt(q.answer,10);
+  $("solMeta").innerHTML =
+    '<span class="sol-chip">Correct answer: <b>' + (ans ? OPT_LETTERS[ans-1] : "-") + '</b></span>' +
+    '<span class="sol-chip">Your answer: <b>' + (sel ? OPT_LETTERS[parseInt(sel,10)-1] : "Not attempted") + '</b></span>' +
+    '<span class="sol-chip">Time spent: <b>' + fmtShort(state.q[i].t) + '</b></span>';
+  $("solExpl").innerHTML = "<h4>Explanation</h4>" + (solHtml(q, state.solLang) || "<i>No solution text provided.</i>");
+  decorateImages($("solQText")); decorateImages($("solQImg")); decorateImages($("solOptions")); decorateImages($("solExpl"));
 
-  $("solPrevBtn").disabled = (i === 0);
-  $("solNextBtn").disabled = (i === N-1);
-
+  var list = solFiltered(), pos = list.indexOf(i);
+  $("solPrevBtn").disabled = !(pos > 0 || (pos === -1 && list.length));
+  $("solNextBtn").disabled = !(pos !== -1 ? pos < list.length - 1 : list.length);
+  $("solInfo").textContent = list.length ? ("Showing " + list.length + " of " + N) : "No questions match this filter";
   renderSolPalette();
   saveState();
 }
-
-function solGoTo(i){ state.solIndex = i; renderSolQuestion(); }
-function solGoNext(){ solGoTo(Math.min(state.solIndex+1, N-1)); }
-function solGoPrev(){ solGoTo(Math.max(state.solIndex-1, 0)); }
-
-function toggleSolPalette(){
-  state.solPaletteHidden = !state.solPaletteHidden;
-  applySolPaletteCollapse();
-  saveState();
+function solGoTo(i){ state.solIndex = i; renderSolQuestion(); closeMobilePalette(); window.scrollTo(0,0); }
+function solGoNext(){
+  var list = solFiltered(); if(!list.length) return;
+  var nxt = list.filter(function(x){ return x > state.solIndex; })[0];
+  if(nxt !== undefined) solGoTo(nxt);
 }
-function applySolPaletteCollapse(){
-  var p = $("solPaletteWrap");
-  p.classList.toggle("hidden", state.solPaletteHidden);
-  $("solCollapseArrow").innerHTML = state.solPaletteHidden ? "&#9654;" : "&#9664;";
+function solGoPrev(){
+  var list = solFiltered(); if(!list.length) return;
+  var prv = list.filter(function(x){ return x < state.solIndex; }).pop();
+  if(prv !== undefined) solGoTo(prv);
 }
-
-function showSolutions(){
-  $("resultPage").classList.add("hidden-page");
-  $("solutionPage").classList.remove("hidden-page");
-  state.solIndex = 0;
-  applySolPaletteCollapse();
+function setSolFilter(v){
+  state.solFilter = v;
+  var list = solFiltered();
+  if(list.length && list.indexOf(state.solIndex) === -1) state.solIndex = list[0];
   renderSolQuestion();
-  saveState();
+}
+function setSolLang(v){ state.solLang = v; saveState(); renderSolQuestion(); }
+function toggleSolPalette(){ state.solPalHidden = !state.solPalHidden; document.body.classList.toggle("pal-hidden", state.solPalHidden); applyPalState(); saveState(); }
+function showSolutions(){
+  state.solIndex = 0; state.solFilter = "all";
+  $("solFilter").value = "all";
+  showScreen("solutionPage");
+  document.body.classList.toggle("pal-hidden", !!state.solPalHidden);
+  applyPalState();
+  renderSolQuestion();
 }
 function backToResult(){
-  $("solutionPage").classList.add("hidden-page");
+  document.body.classList.remove("pal-hidden");
   renderResult();
-  $("resultPage").classList.remove("hidden-page");
+  showScreen("resultPage");
 }
 
-/* ================= KEYBOARD SHORTCUTS ================= */
+/* ================= KEYBOARD ================= */
 document.addEventListener("keydown", function(e){
   if(lbIsOpen()){
     if(e.key === "Escape") lbClose();
@@ -749,11 +788,11 @@ document.addEventListener("keydown", function(e){
     else if(e.key === "0") lbFit();
     return;
   }
+  if(e.key === "Escape"){ closeMobilePalette(); }
   if(state.phase !== "testing") return;
   if(e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT")) return;
   if(["1","2","3","4","5"].indexOf(e.key) !== -1){
-    var lab = document.querySelector('#qOptions label[data-opt="'+e.key+'"] input');
-    if(lab){ lab.checked = true; selectOption(e.key); }
+    if(QUESTIONS[state.current].options["option_" + e.key]) pickOption(e.key);
   } else if(e.key === "ArrowRight"){ saveAndNext(); }
   else if(e.key === "ArrowLeft"){ goPrev(); }
 });
@@ -764,12 +803,11 @@ function boot(){
   state = loadState();
   initStaticText();
   initWelcome();
+  applyPalState();
 
   if(state.phase === "submitted"){
-    $("welcomePage").classList.add("hidden-page");
-    $("solLangSelect").value = state.solLang;
     renderResult();
-    $("resultPage").classList.remove("hidden-page");
+    showScreen("resultPage");
   } else if(state.phase === "testing" || state.phase === "paused"){
     $("instantFeedbackToggle").checked = state.instantFeedback;
     enterTestPage();
@@ -777,12 +815,8 @@ function boot(){
       clearInterval(timerHandle);
       $("pauseOverlay").classList.add("show");
     }
+  } else {
+    showScreen("welcomePage");
   }
-  /* else: stay on welcomePage (its default state in the markup) */
 }
-
-if(document.readyState === "loading"){
-  document.addEventListener("DOMContentLoaded", boot);
-} else {
-  boot();
-}
+if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
