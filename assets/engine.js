@@ -392,7 +392,52 @@ function statusCounts(){
   return c;
 }
 function paletteButton(i, cls, extra){
-  return '<button type="button" class="qnum ' + cls + (extra||"") + '" onclick="' + (cls.indexOf("sol") === 0 ? "solGoTo(" : "goTo(") + i + ')"><span class="shape"></span><span class="n">' + (i+1) + '</span></button>';
+  var bm = savedIds[sid(i)] ? '<span class="bm" title="Saved"></span>' : "";
+  return '<button type="button" class="qnum ' + cls + (extra||"") + '" onclick="' + (cls.indexOf("sol") === 0 ? "solGoTo(" : "goTo(") + i + ')"><span class="shape"></span><span class="n">' + (i+1) + '</span>' + bm + '</button>';
+}
+
+/* ================= SAVED QUESTIONS (bookmarks, shown in Mock Hub > Saved) ================= */
+var savedIds = {};
+/* works even if an older common.js (without the saved-questions store) is still deployed */
+function hcOk(){ return !!(window.HubCommon && typeof HubCommon.readSaved === "function" && typeof HubCommon.addSaved === "function"); }
+function sid(i){ return [CFG.year, CFG.subject, CFG.setId, i].join("|"); }
+function refreshSavedIds(){
+  savedIds = {};
+  if(!hcOk()) return;
+  try{ HubCommon.readSaved().forEach(function(e){ savedIds[e.id] = 1; }); }catch(e){}
+}
+function previewText(q){
+  var t = (q.question.en || q.question.hi || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  return t.length > 170 ? t.slice(0, 167) + "..." : t;
+}
+function toggleSaveFor(i, mark){
+  if(!hcOk()){ toast("Save needs the latest assets/common.js on the site"); return; }
+  var id = sid(i);
+  if(savedIds[id]){
+    HubCommon.removeSaved(id);
+    toast("Removed from Saved");
+  } else {
+    var q = QUESTIONS[i];
+    var res = !mark ? "skipped" : (mark === q.answer ? "correct" : "wrong");
+    var ok = HubCommon.addSaved({
+      id: id, y: CFG.year, s: CFG.subject, set: CFG.setId, i: i,
+      chapter: CFG.chapterName, title: CFG.setTitle, topic: q.topic || "",
+      preview: previewText(q), mark: mark || "", res: res, at: Date.now()
+    });
+    toast(ok ? "Saved. Find it in Mock Hub > Saved" : "Could not save: browser storage is full");
+  }
+  refreshSavedIds();
+  paintSaveBtns();
+}
+function toggleSave(){ if(state.phase !== "testing") return; toggleSaveFor(state.current, draft); renderPalette(); }
+function toggleSolSave(){ toggleSaveFor(state.solIndex, state.q[state.solIndex].selected); renderSolPalette(); }
+function paintSaveBtns(){
+  [["saveBtn", state.current], ["solSaveBtn", state.solIndex]].forEach(function(p){
+    var b = $(p[0]); if(!b) return;
+    var on = !!savedIds[sid(p[1])];
+    b.classList.toggle("on", on);
+    b.querySelector("span").textContent = on ? "Saved" : "Save";
+  });
 }
 function renderPalette(){
   var html = "";
@@ -451,6 +496,7 @@ function renderQuestion(){
   $("showSolBtn").style.display = state.instantFeedback ? "inline-block" : "none";
   $("showSolBtn").textContent = st.solutionSeen ? "Hide Solution" : "Show Solution";
   $("prevBtn").disabled = (i === 0);
+  paintSaveBtns();
   paintSelection();
   renderPalette();
   saveState();
@@ -743,6 +789,7 @@ function renderSolQuestion(){
   $("solPrevBtn").disabled = !(pos > 0 || (pos === -1 && list.length));
   $("solNextBtn").disabled = !(pos !== -1 ? pos < list.length - 1 : list.length);
   $("solInfo").textContent = list.length ? ("Showing " + list.length + " of " + N) : "No questions match this filter";
+  paintSaveBtns();
   renderSolPalette();
   saveState();
 }
@@ -797,10 +844,13 @@ document.addEventListener("keydown", function(e){
   else if(e.key === "ArrowLeft"){ goPrev(); }
 });
 
+window.addEventListener("storage", function(e){ if(e.key === "sscscholars_saved_v1"){ refreshSavedIds(); if(state){ paintSaveBtns(); } } });
+
 /* ================= INIT ================= */
 function boot(){
   applyZoom();
   state = loadState();
+  refreshSavedIds();
   initStaticText();
   initWelcome();
   applyPalState();
@@ -819,4 +869,18 @@ function boot(){
     showScreen("welcomePage");
   }
 }
-if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
+function safeBoot(){
+  try{ boot(); }
+  catch(err){
+    setTimeout(function(){
+      var l = $("loadingScreen");
+      if(!l) return;
+      l.style.display = ""; l.classList.add("err");
+      $("loadMsg").textContent = "Exam screen error: " + (err && err.message ? err.message : err);
+      $("loadSub").textContent = "Make sure ALL files from the latest zip are uploaded (test.html, assets/engine.js, assets/common.js, assets/test.css), then press Ctrl+F5.";
+      $("loadBack").style.display = "inline-block";
+    }, 80);
+    if(window.console) console.error(err);
+  }
+}
+if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", safeBoot); } else { safeBoot(); }
