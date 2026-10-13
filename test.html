@@ -3,9 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <title>Test | THE SSC SCHOLARS OFFICIAL</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<script>
+  /* apply saved theme before paint (no white flash in dark mode) */
+  (function(){ try{ if(localStorage.getItem("sscscholars_theme")==="dark") document.documentElement.setAttribute("data-theme","dark"); }catch(e){} })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/test.css">
 </head>
 <body>
@@ -21,239 +27,370 @@
   </div>
 </div>
 
-<!-- ============ WELCOME PAGE ============ -->
-<div id="welcomePage">
-  <div class="welcomewrap">
-    <div class="welcomecard">
-      <div class="welcomehero">
-        <div class="wbrand">THE SSC SCHOLARS OFFICIAL</div>
-        <h1 id="wTitle">Exam Title</h1>
-        <div class="wsub" id="wSub">Section</div>
-      </div>
-      <div class="welcomebody">
-        <div class="wmeta">
-          <div><b id="wTotalQ">-</b><span>Questions</span></div>
-          <div><b id="wTotalTime">-</b><span>Minutes</span></div>
-          <div><b id="wMarks">-</b><span>Marking</span></div>
-        </div>
-        <div class="winstr">
-          <h4>Quick Instructions</h4>
-          <ul>
-            <li>Click an option to select your answer for the current question.</li>
-            <li>Use <b>Save &amp; Next</b> to move on, or <b>Mark for Review</b> to flag a question and come back later.</li>
-            <li>The question palette on the right shows your progress &mdash; click any number to jump straight to it.</li>
-            <li>You can <b>Pause</b> the test any time; your progress auto-saves, even if you close this tab.</li>
-            <li>The test auto-submits the moment the timer hits zero.</li>
-          </ul>
-        </div>
-        <div class="wlegend">
-          <span><i class="dot" style="width:12px;height:12px;border-radius:3px;display:inline-block;background:#aab1c0"></i>Not Visited</span>
-          <span><i class="dot" style="width:12px;height:12px;border-radius:3px;display:inline-block;background:#f0432f"></i>Not Answered</span>
-          <span><i class="dot" style="width:12px;height:12px;border-radius:3px;display:inline-block;background:#17a668"></i>Answered</span>
-          <span><i class="dot" style="width:12px;height:12px;border-radius:3px;display:inline-block;background:#8b3fe8"></i>Marked</span>
-        </div>
-        <div class="wtoggle">
-          <div>
-            <div class="ttl">Instant Feedback Mode</div>
-            <div class="desc">See right / wrong the moment you pick an option, plus an on-demand Show Solution button.</div>
+<!-- ============ INSTRUCTIONS (2 pages, like the real exam) ============ -->
+<div id="welcomePage" class="screen">
+  <header class="ws-bar">
+    <a class="ws-back" href="index.html" aria-label="Back to Mock Hub">&#8249;</a>
+    <div class="brand"><span class="logo">SS</span><span class="brandname">THE SSC SCHOLARS OFFICIAL</span></div>
+    <div class="ws-title" id="wsHeaderTitle"></div>
+    <div class="ws-right">
+      <button type="button" class="icon-btn" onclick="toggleDark()" aria-label="Dark mode" title="Dark mode"><span class="ic-theme">&#9790;</span></button>
+    </div>
+  </header>
+
+  <!-- page 1 -->
+  <div class="ws-page active" id="wsPage1">
+    <div class="ws-scroll">
+      <div class="ws-card">
+        <div class="ws-h">Instructions, Terms &amp; Conditions</div>
+
+        <div class="ws-frame">
+          <div class="ws-fh">Exam Overview</div>
+          <div class="ws-fb">
+            <div class="ov-grid">
+              <div class="ov"><span>Duration</span><b><i id="ovTime">-</i> Minutes</b></div>
+              <div class="ov"><span>Total Questions</span><b id="ovQ">-</b></div>
+              <div class="ov"><span>Correct Marks</span><b class="g" id="ovCor">-</b></div>
+              <div class="ov"><span>Negative Marking</span><b class="r" id="ovNeg">-</b></div>
+            </div>
+            <div class="tbl-scroll">
+              <table class="ws-table">
+                <thead><tr><th>Section Name</th><th>Questions</th><th>Marks</th><th>Negative</th></tr></thead>
+                <tbody><tr><td id="ovSec">-</td><td id="ovSecQ">-</td><td id="ovSecM">-</td><td id="ovSecN">-</td></tr></tbody>
+              </table>
+            </div>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="instantFeedbackToggle">
-            <span class="slider"></span>
-          </label>
         </div>
-        <button class="btn-startbig" id="startTestBtn" type="button">Start Test</button>
-        <a class="backhub" href="index.html">&larr; Back to Mock Hub</a>
+
+        <div class="ws-frame">
+          <div class="ws-fh">General Instructions</div>
+          <div class="ws-fb ws-instr">
+            <ol>
+              <li>The clock is set at the start of the test. The countdown timer in the top right corner shows the time left. When the timer reaches zero, the test <b>ends by itself</b> and your saved answers are submitted.</li>
+              <li>The question palette on the right shows the status of each question using the symbols explained on the next page.</li>
+              <li>Click on the number of a question in the palette to go to it directly. <b>Your answer to the question you are leaving is not saved</b> unless you press <b>Save &amp; Next</b> or <b>Mark for Review</b> first.</li>
+              <li>To select an answer, click the radio button next to the option. To deselect it, click the same option again or press <b>Clear Response</b>.</li>
+              <li>To save your answer you <b>MUST</b> click <b>Save &amp; Next</b>. To flag a question and come back later, click <b>Mark for Review</b>. A question that is answered and marked for review is still evaluated.</li>
+              <li>Each correct answer carries <b id="insCor">-</b> mark(s) and each wrong answer deducts <b id="insNeg">-</b> mark(s). Unattempted questions carry no marks.</li>
+              <li>You can <b>Pause</b> the test; your progress is saved in this browser and the timer waits for you.</li>
+              <li>Do not refresh the page or press the Back button during the test.</li>
+            </ol>
+          </div>
+        </div>
       </div>
+    </div>
+    <div class="ws-foot">
+      <a class="btn-yellow" href="index.html">Go to Hub</a>
+      <button type="button" class="btn-blue" onclick="wsPage(2)">Next &#8250;</button>
+    </div>
+  </div>
+
+  <!-- page 2 -->
+  <div class="ws-page" id="wsPage2">
+    <div class="ws-scroll">
+      <div class="ws-card">
+        <div class="ws-intro">The different symbols used in the next pages are shown below. Please go through them and understand their meaning before you start the test.</div>
+        <div class="ws-frame">
+          <div class="ws-fb sym-list">
+            <div class="sym"><i class="pal nv">1</i><span>You have not visited the question yet.</span></div>
+            <div class="sym"><i class="pal na">2</i><span>You have not answered the question.</span></div>
+            <div class="sym"><i class="pal an">3</i><span>You have answered the question.</span></div>
+            <div class="sym"><i class="pal mk">4</i><span>You have NOT answered the question, but have marked the question for review.</span></div>
+            <div class="sym"><i class="pal ma">5</i><span>You have answered the question, but marked it for review. This answer <b>will be considered</b> for evaluation.</span></div>
+          </div>
+        </div>
+        <div class="ws-frame" id="optBox">
+          <div class="ws-fh">Test Options</div>
+          <div class="ws-fb opt-row">
+            <div class="opt-col" id="langBox" style="display:none">
+              <label for="welcomeLang">Select Test Language</label>
+              <select id="welcomeLang" class="sel">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="bi">Bilingual (English + Hindi)</option>
+              </select>
+            </div>
+            <div class="opt-col opt-practice">
+              <div>
+                <div class="ttl">Practice Mode</div>
+                <div class="desc">Shows right / wrong the moment you pick an option, with an on-demand Show Solution. Real exams do not have this &mdash; keep it off for a true mock.</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="instantFeedbackToggle"><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+        <label class="agree"><input type="checkbox" id="instrConfirm">
+          <span>I have read all the instructions carefully and have understood them. I agree not to cheat or use unfair means in this examination. I understand that using unfair means of any sort for my own or someone else's advantage will lead to my immediate disqualification.</span>
+        </label>
+      </div>
+    </div>
+    <div class="ws-foot">
+      <button type="button" class="btn-yellow" onclick="wsPage(1)">&#8249; Back</button>
+      <button type="button" class="btn-blue" id="startTestBtn" disabled>Start Test</button>
     </div>
   </div>
 </div>
 
-<!-- ============ TEST PAGE ============ -->
-<div id="testPage" class="hidden-page">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="logo">SS</div>
-      <div class="brandname">THE SSC SCHOLARS OFFICIAL</div>
-      <div class="zoomgrp">
-        <button type="button" onclick="zoomChange(-1)" title="Zoom out (text + images)">A&minus;</button>
-        <button type="button" class="zlabel zoomLabel" onclick="zoomReset()" title="Reset zoom">100%</button>
-        <button type="button" onclick="zoomChange(1)" title="Zoom in (text + images)">A+</button>
+<!-- ============ TEST SCREEN ============ -->
+<div id="testPage" class="screen hidden-page">
+  <header class="hdr">
+    <div class="hdr-row1">
+      <div class="hdr-left">
+        <div class="brand"><span class="logo">SS</span><span class="brandname">THE SSC SCHOLARS OFFICIAL</span></div>
+        <button type="button" class="icon-btn" onclick="zoomChange(-1)" title="Zoom out">A&minus;</button>
+        <button type="button" class="icon-btn zoomLabel" onclick="zoomReset()" title="Reset zoom">100%</button>
+        <button type="button" class="icon-btn" onclick="zoomChange(1)" title="Zoom in">A+</button>
+        <button type="button" class="icon-btn fs-btn" onclick="toggleFullscreen()" title="Full screen / exit">
+          <svg id="fsEnter" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          <svg id="fsExit" style="display:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+        </button>
       </div>
-      <button class="btn-outline" id="fsBtn" type="button" onclick="toggleFullscreen()">Full Screen</button>
+      <div class="hdr-center">
+        <div class="hdr-title" id="hdrTitle">Exam Title</div>
+        <div class="hdr-sub" id="hdrSub">Section</div>
+      </div>
+      <div class="hdr-right">
+        <button type="button" class="icon-btn" onclick="toggleDark()" title="Dark mode"><span class="ic-theme">&#9790;</span></button>
+        <button type="button" class="pause-btn" onclick="openPause()"><span class="pbox">&#10074;&#10074;</span><span class="plabel">Pause</span></button>
+        <div class="timer-box"><span class="tl">Time Left</span><b id="timeLeft">--:--</b></div>
+      </div>
     </div>
-    <div class="title-block">
-      <span id="hdrTitle">Exam Title</span>
-      <span class="sub" id="hdrSub">Section</span>
+    <div class="hdr-row2">
+      <div class="top-actions">
+        <button type="button" class="btn-act" id="prevBtn" onclick="goPrev()">&#8249; Previous</button>
+        <button type="button" class="btn-act mark" id="markBtn" onclick="markForReview()">Mark for Review &amp; Next</button>
+        <button type="button" class="btn-act primary" id="nextBtn" onclick="saveAndNext()">Save &amp; Next</button>
+        <button type="button" class="btn-act submit" onclick="openSubmit()">Submit Test</button>
+      </div>
     </div>
-    <div class="topbar-right">
-      <div class="timeleft" id="timeleftBox">Time Left: <span id="timeLeft">--:--</span></div>
-      <button class="pausebtn" onclick="togglePause()">&#10074;&#10074; <span id="pauseLabel">Pause Test</span></button>
-    </div>
-  </div>
+  </header>
 
-  <div class="subbar">
-    <div class="taglist"><span class="topictag" id="qTopicTag" style="display:none;"></span></div>
-    <div class="qanswered">Total Questions Answered: <span id="totalAnsweredTop">0</span></div>
-  </div>
-
-  <div class="controlrow">
-    <div class="section-tab" id="sectionTab">Section</div>
-    <div class="navbtns">
-      <button class="btn" onclick="goPrev()">Previous</button>
-      <button class="btn purplebtn" onclick="markForReview()">Mark for Review</button>
-      <button class="btn" onclick="saveAndNext()">Save &amp; Next</button>
-      <button class="btn submitbtn" onclick="confirmSubmit()">Submit Test</button>
-    </div>
-    <div class="collapse-arrow" onclick="togglePalette()" id="collapseArrow">&#9664;</div>
+  <div class="section-nav">
+    <span class="sn-lbl">Sections</span>
+    <button type="button" class="sec-btn active" id="sectionTab">Section</button>
+    <span class="sn-info" id="secInfo"></span>
   </div>
 
   <div class="mainwrap">
-    <div class="qpanel">
-      <div class="qpanel-head">
-        <h3 id="qNoHeading">Question No 1</h3>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-weight:600;font-size:12.5px;" id="langLabel">Language:</span>
-          <select class="lang-select" id="langSelect" onchange="setLang(this.value)"><option value="en">English</option></select>
+    <div class="qcol">
+      <div class="card" id="qCard">
+        <div class="qbar">
+          <div class="qnum-label">Question <b id="qNoHeading">1</b></div>
+          <div class="qbar-right">
+            <span class="mm" id="qMarks"></span>
+            <label class="lang-wrap" id="langWrap" style="display:none"><span>Language</span>
+              <select id="langSelect" onchange="setLang(this.value)">
+                <option value="en">English</option><option value="hi">Hindi</option><option value="bi">EN + HI</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="qbody zwrap-host">
+          <div class="topic-tag" id="qTopicTag" style="display:none"></div>
+          <div class="qtext" id="qText"></div>
+          <div class="qimg" id="qImg" style="display:none"></div>
+          <div class="options" id="qOptions"></div>
+          <div class="unsaved-hint" id="unsavedHint" style="display:none">Option selected &mdash; press <b>Save &amp; Next</b> to save this answer.</div>
+          <div class="fb-strip" id="fbStrip"></div>
+          <div class="explbox" id="liveSolutionBox" style="display:none"></div>
+        </div>
+        <div class="qfooter">
+          <button type="button" class="btn-clear" onclick="clearResponse()">Clear Response</button>
+          <button type="button" class="btn-sol" id="showSolBtn" onclick="toggleLiveSolution()" style="display:none">Show Solution</button>
         </div>
       </div>
-      <div class="qbody">
-        <div class="qtext" id="qText"></div>
-        <div class="qimg" id="qImg" style="display:none;"></div>
-        <div class="options" id="qOptions"></div>
-        <div class="fb-strip" id="fbStrip"></div>
-        <div class="explbox" id="liveSolutionBox" style="display:none;"></div>
-      </div>
-      <div class="qfooter">
-        <button class="btn-clear" onclick="clearResponse()">Clear Response</button>
-        <button class="btn-gold" id="showSolBtn" type="button" onclick="toggleLiveSolution()" style="display:none;">Show Solution</button>
-      </div>
     </div>
 
-    <div class="palette-wrap" id="paletteWrap">
-      <div class="palette-title" id="paletteTitle">Section:</div>
-      <div class="palette-grid" id="paletteGrid"></div>
-
-      <div class="analytics">
-        <div class="analytics-head">Analytics</div>
-        <table>
-          <tr><td>Answered</td><td id="stAnswered">0</td></tr>
-          <tr><td>Not Answered</td><td id="stNotAnswered">0</td></tr>
-          <tr><td>Marked for review</td><td id="stMarked">0</td></tr>
-          <tr><td>Answered &amp; Marked</td><td id="stAnsMarked">0</td></tr>
-          <tr><td>Not Visited</td><td id="stNotVisited">0</td></tr>
-        </table>
+    <aside class="palette" id="paletteWrap">
+      <button type="button" class="pal-toggle" onclick="togglePalette()" id="collapseArrow" title="Hide / show palette">&#9654;</button>
+      <div class="pal-inner">
+        <div class="pal-head"><span class="pal-user">Candidate</span><span class="pal-sec" id="paletteTitle">Section</span></div>
+        <div class="pal-legend">
+          <div><i class="pal an">0</i> Answered</div>
+          <div><i class="pal na">0</i> Not Answered</div>
+          <div><i class="pal nv">0</i> Not Visited</div>
+          <div><i class="pal mk">0</i> Marked for Review</div>
+          <div class="wide"><i class="pal ma">0</i> Answered &amp; Marked for Review (will be evaluated)</div>
+        </div>
+        <div class="pal-sechead" id="paletteSecHead">Section</div>
+        <div class="palette-grid" id="paletteGrid"></div>
+        <div class="pal-submit"><button type="button" class="btn-submit-big" onclick="openSubmit()">Submit Test</button></div>
       </div>
-
-      <div class="legend">
-        <div><span class="dot" style="background:#aab1c0"></span> Not Visited</div>
-        <div><span class="dot" style="background:#f0432f"></span> Not Answered</div>
-        <div><span class="dot" style="background:#17a668"></span> Answered</div>
-        <div><span class="dot" style="background:#8b3fe8"></span> Marked for Review</div>
-        <div><span class="dot" style="background:#8b3fe8"></span> Answered &amp; Marked</div>
-      </div>
-    </div>
+    </aside>
   </div>
+
+  <!-- mobile bottom bar -->
+  <div class="fbar" id="floatBar">
+    <button type="button" onclick="goPrev()">&#8249; Prev</button>
+    <button type="button" class="mk" onclick="markForReview()">Mark</button>
+    <button type="button" class="pr" onclick="saveAndNext()">Save &amp; Next</button>
+  </div>
+  <button type="button" class="pal-fab" id="palFab" onclick="openMobilePalette()" aria-label="Question palette">&#9776;</button>
+  <div class="pal-backdrop" id="palBackdrop" onclick="closeMobilePalette()"></div>
 </div>
 
 <!-- ============ RESULT PAGE ============ -->
-<div id="resultPage" class="hidden-page">
-  <div class="resultwrap">
-    <div class="score-hero">
-      <div>
-        <div class="wbrand" style="opacity:.85;">THE SSC SCHOLARS OFFICIAL</div>
-        <h1 id="resTitle">Test Completed &#127881;</h1>
-        <p id="resSub">Exam Title</p>
+<div id="resultPage" class="screen hidden-page">
+  <header class="ws-bar">
+    <a class="ws-back" href="index.html" aria-label="Back to Mock Hub">&#8249;</a>
+    <div class="brand"><span class="logo">SS</span><span class="brandname">THE SSC SCHOLARS OFFICIAL</span></div>
+    <div class="ws-title" id="resHdrTitle"></div>
+    <div class="ws-right">
+      <button type="button" class="icon-btn" onclick="toggleDark()" aria-label="Dark mode"><span class="ic-theme">&#9790;</span></button>
+    </div>
+  </header>
+  <div class="res-scroll">
+    <div class="resultwrap">
+      <div class="score-hero">
+        <div class="sh-left">
+          <div class="sh-kicker">Test Completed</div>
+          <h1 id="resTitle">Exam Title</h1>
+          <p id="resSub">Section</p>
+          <div class="sh-actions">
+            <button type="button" class="btn-blue" onclick="showSolutions()">View Solutions</button>
+            <button type="button" class="btn-ghost-w" onclick="restartTest()">Reattempt</button>
+            <a class="btn-ghost-w" href="index.html">Back to Hub</a>
+          </div>
+        </div>
+        <div class="score-ring"><span>SCORE</span><div id="finalScore">0</div><em id="finalMax">/ 0</em></div>
       </div>
-      <div class="score-ring"><span>SCORE</span><div id="finalScore">0</div></div>
-    </div>
-    <div class="statgrid">
-      <div class="statcard correct"><b id="stCorrect">0</b>Correct</div>
-      <div class="statcard wrong"><b id="stWrong">0</b>Wrong</div>
-      <div class="statcard unattempt"><b id="stUnattempt">0</b>Unattempted</div>
-      <div class="statcard accuracy"><b id="stAccuracy">0%</b>Accuracy</div>
-    </div>
-    <div class="statgrid">
-      <div class="statcard"><b id="stTimeTaken">--</b>Time Taken</div>
-      <div class="statcard"><b id="stMaxMarks">0</b>Max Marks</div>
-      <div class="statcard"><b id="stNegMarks">0</b>Negative Marks</div>
-      <div class="statcard"><b id="stAvgTime">--</b>Avg Time / Q</div>
-    </div>
-    <div class="resultactions">
-      <button class="secondary" onclick="showSolutions()">View Solutions</button>
-      <button class="primary" onclick="restartTest()">Retake Test</button>
+
+      <div class="statgrid">
+        <div class="statcard correct"><b id="stCorrect">0</b>Correct</div>
+        <div class="statcard wrong"><b id="stWrong">0</b>Wrong</div>
+        <div class="statcard unattempt"><b id="stUnattempt">0</b>Unattempted</div>
+        <div class="statcard accuracy"><b id="stAccuracy">0%</b>Accuracy</div>
+      </div>
+      <div class="statgrid">
+        <div class="statcard"><b id="stTimeTaken">--</b>Time Taken</div>
+        <div class="statcard"><b id="stAvgTime">--</b>Avg Time / Q</div>
+        <div class="statcard"><b id="stNegMarks">0</b>Negative Marks</div>
+        <div class="statcard"><b id="stAttempted">0</b>Attempted</div>
+      </div>
+
+      <div class="panel">
+        <h3>Section Summary</h3>
+        <div class="tbl-scroll"><table class="data" id="secTable"></table></div>
+      </div>
+
+      <div class="panel">
+        <h3>Topic-wise Performance</h3>
+        <div class="tbl-scroll"><table class="data" id="topicTable"></table></div>
+      </div>
+
+      <div class="panel">
+        <h3>Question-wise Time <small>(bar = time spent, colour = result)</small></h3>
+        <div id="timeBars" class="timebars"></div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ============ SOLUTIONS PAGE ============ -->
-<div id="solutionPage" class="hidden-page">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="logo">SS</div>
-      <div class="brandname">THE SSC SCHOLARS OFFICIAL</div>
-      <div class="zoomgrp">
-        <button type="button" onclick="zoomChange(-1)" title="Zoom out (text + images)">A&minus;</button>
-        <button type="button" class="zlabel zoomLabel" onclick="zoomReset()" title="Reset zoom">100%</button>
-        <button type="button" onclick="zoomChange(1)" title="Zoom in (text + images)">A+</button>
+<div id="solutionPage" class="screen hidden-page">
+  <header class="hdr">
+    <div class="hdr-row1">
+      <div class="hdr-left">
+        <div class="brand"><span class="logo">SS</span><span class="brandname">THE SSC SCHOLARS OFFICIAL</span></div>
+        <button type="button" class="icon-btn" onclick="zoomChange(-1)" title="Zoom out">A&minus;</button>
+        <button type="button" class="icon-btn zoomLabel" onclick="zoomReset()" title="Reset zoom">100%</button>
+        <button type="button" class="icon-btn" onclick="zoomChange(1)" title="Zoom in">A+</button>
+      </div>
+      <div class="hdr-center">
+        <div class="hdr-title" id="solHdrTitle">Exam Title</div>
+        <div class="hdr-sub">Solutions</div>
+      </div>
+      <div class="hdr-right">
+        <button type="button" class="icon-btn" onclick="toggleDark()" title="Dark mode"><span class="ic-theme">&#9790;</span></button>
+        <button type="button" class="btn-act" onclick="backToResult()">&#8249; Analysis</button>
       </div>
     </div>
-    <div class="title-block">
-      <span id="solHdrTitle">Exam Title</span>
-      <span class="sub">Solutions</span>
+    <div class="hdr-row2">
+      <div class="top-actions">
+        <button type="button" class="btn-act" id="solPrevBtn" onclick="solGoPrev()">&#8249; Previous</button>
+        <button type="button" class="btn-act primary" id="solNextBtn" onclick="solGoNext()">Next &#8250;</button>
+      </div>
     </div>
-    <div class="topbar-right">
-      <button class="btn" onclick="backToResult()">&larr; Back to Analysis</button>
-    </div>
-  </div>
+  </header>
 
-  <div class="controlrow">
-    <div class="section-tab" id="solSectionTab">Section</div>
-    <div class="navbtns">
-      <button class="btn" id="solPrevBtn" onclick="solGoPrev()">Previous</button>
-      <button class="btn" id="solNextBtn" onclick="solGoNext()">Next</button>
-    </div>
-    <div class="collapse-arrow" onclick="toggleSolPalette()" id="solCollapseArrow">&#9664;</div>
+  <div class="section-nav">
+    <span class="sn-lbl">Show</span>
+    <select id="solFilter" class="sel sel-sm" onchange="setSolFilter(this.value)">
+      <option value="all">All questions</option>
+      <option value="correct">Correct only</option>
+      <option value="wrong">Wrong only</option>
+      <option value="skipped">Skipped only</option>
+    </select>
+    <span class="sn-info" id="solInfo"></span>
   </div>
 
   <div class="mainwrap">
-    <div class="qpanel">
-      <div class="qpanel-head">
-        <h3 id="solQNoHeading">Question No 1</h3>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span id="solBadgeHolder"></span>
-          <select class="lang-select" id="solLangSelect" onchange="setSolLang(this.value)"><option value="en">English</option></select>
+    <div class="qcol">
+      <div class="card">
+        <div class="qbar">
+          <div class="qnum-label">Question <b id="solQNoHeading">1</b> <span id="solBadgeHolder"></span></div>
+          <div class="qbar-right">
+            <span class="mm" id="solMarks"></span>
+            <label class="lang-wrap" id="solLangWrap" style="display:none"><span>Language</span>
+              <select id="solLangSelect" onchange="setSolLang(this.value)">
+                <option value="en">English</option><option value="hi">Hindi</option><option value="bi">EN + HI</option>
+              </select>
+            </label>
+          </div>
         </div>
-      </div>
-      <div class="qbody">
-        <div class="qtext" id="solQText"></div>
-        <div class="qimg" id="solQImg" style="display:none;"></div>
-        <div id="solOptions"></div>
-        <div class="explbox" id="solExpl"></div>
+        <div class="qbody zwrap-host">
+          <div class="topic-tag" id="solTopicTag" style="display:none"></div>
+          <div class="qtext" id="solQText"></div>
+          <div class="qimg" id="solQImg" style="display:none"></div>
+          <div class="options" id="solOptions"></div>
+          <div class="sol-meta" id="solMeta"></div>
+          <div class="explbox" id="solExpl"></div>
+        </div>
       </div>
     </div>
 
-    <div class="palette-wrap" id="solPaletteWrap">
-      <div class="palette-title" id="solPaletteTitle">Section:</div>
-      <div class="palette-grid" id="solPaletteGrid"></div>
-
-      <div class="legend">
-        <div><span class="dot" style="background:#17a668"></span> Correct</div>
-        <div><span class="dot" style="background:#f0432f"></span> Wrong</div>
-        <div><span class="dot" style="background:#aab1c0"></span> Skipped</div>
+    <aside class="palette" id="solPaletteWrap">
+      <button type="button" class="pal-toggle" onclick="toggleSolPalette()" id="solCollapseArrow" title="Hide / show palette">&#9654;</button>
+      <div class="pal-inner">
+        <div class="pal-head"><span class="pal-user">Solutions</span><span class="pal-sec" id="solPaletteTitle">Section</span></div>
+        <div class="pal-legend">
+          <div><i class="pal an">0</i> Correct</div>
+          <div><i class="pal na">0</i> Wrong</div>
+          <div><i class="pal nv">0</i> Skipped</div>
+        </div>
+        <div class="pal-sechead" id="solPaletteSecHead">Section</div>
+        <div class="palette-grid" id="solPaletteGrid"></div>
       </div>
+    </aside>
+  </div>
+  <div class="fbar" id="solFloatBar">
+    <button type="button" onclick="solGoPrev()">&#8249; Prev</button>
+    <button type="button" class="pr" onclick="solGoNext()">Next &#8250;</button>
+  </div>
+  <button type="button" class="pal-fab" onclick="openMobilePalette()" aria-label="Question palette">&#9776;</button>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-bg" id="pauseModal">
+  <div class="modal">
+    <div class="m-icon">&#10074;&#10074;</div>
+    <h3>Pause Test?</h3>
+    <p>Your timer will stop and your progress is saved in this browser. The question paper stays hidden while the test is paused.</p>
+    <div class="modal-actions">
+      <button type="button" class="cancel" onclick="closePause()">No</button>
+      <button type="button" class="confirm" onclick="doPause()">Yes, Pause</button>
     </div>
   </div>
 </div>
 
 <div class="pauseoverlay" id="pauseOverlay">
   <h2>Test Paused</h2>
-  <p>Your timer is on hold and your progress is saved &mdash; you can even close this tab. Click resume when you're ready.</p>
-  <button class="btn" onclick="togglePause()">Resume Test</button>
+  <p>Your timer is on hold and your progress is saved &mdash; you can even close this tab. Press Resume when you are ready.</p>
+  <button type="button" class="btn-blue" onclick="resumeTest()">Resume Test</button>
 </div>
 
 <div class="modal-bg" id="submitModal">
-  <div class="modal">
+  <div class="modal wide">
     <h3>Submit Test?</h3>
     <div class="modal-grid">
       <div><b id="mAnswered">0</b>Answered</div>
@@ -261,13 +398,26 @@
       <div><b id="mMarked">0</b>Marked for Review</div>
       <div><b id="mNotVisited">0</b>Not Visited</div>
     </div>
-    <p style="font-size:13px;color:#666;">Once submitted, you cannot change your answers.</p>
+    <p class="m-note">Only answers saved with <b>Save &amp; Next</b> or <b>Mark for Review</b> are counted. Once you submit, you cannot change your answers.</p>
     <div class="modal-actions">
-      <button class="cancel" onclick="closeSubmitModal()">Cancel</button>
-      <button class="confirm" onclick="doSubmit()">Yes, Submit</button>
+      <button type="button" class="cancel" onclick="closeSubmitModal()">Cancel</button>
+      <button type="button" class="confirm" onclick="doSubmit()">Yes, Submit</button>
     </div>
   </div>
 </div>
+
+<div class="modal-bg" id="reattemptModal">
+  <div class="modal">
+    <h3>Reattempt this test?</h3>
+    <p>Your current attempt and result for this test will be erased and the test starts fresh.</p>
+    <div class="modal-actions">
+      <button type="button" class="cancel" onclick="document.getElementById('reattemptModal').classList.remove('show')">Cancel</button>
+      <button type="button" class="confirm" onclick="doRestart()">Yes, Reattempt</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <div id="imgLightbox">
   <div class="lbbar">
