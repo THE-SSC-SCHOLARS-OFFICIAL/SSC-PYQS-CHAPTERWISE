@@ -178,6 +178,7 @@
           <div class="qnum-label">Question <b id="qNoHeading">1</b></div>
           <div class="qbar-right">
             <span class="mm" id="qMarks"></span>
+            <button type="button" class="btn-save" id="saveBtn" onclick="toggleSave()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg><span>Save</span></button>
             <label class="lang-wrap" id="langWrap" style="display:none"><span>Language</span>
               <select id="langSelect" onchange="setLang(this.value)">
                 <option value="en">English</option><option value="hi">Hindi</option><option value="bi">EN + HI</option>
@@ -331,6 +332,7 @@
           <div class="qnum-label">Question <b id="solQNoHeading">1</b> <span id="solBadgeHolder"></span></div>
           <div class="qbar-right">
             <span class="mm" id="solMarks"></span>
+            <button type="button" class="btn-save" id="solSaveBtn" onclick="toggleSolSave()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg><span>Save</span></button>
             <label class="lang-wrap" id="solLangWrap" style="display:none"><span>Language</span>
               <select id="solLangSelect" onchange="setSolLang(this.value)">
                 <option value="en">English</option><option value="hi">Hindi</option><option value="bi">EN + HI</option>
