@@ -33,20 +33,25 @@
       <p class="hero-sub">Questions you saved during a mock appear here, subject-wise and year-wise. Tap a question to solve it again, see what you marked in the mock, or open the solution directly.</p>
     </section>
 
-    <div class="field sv-year">
-      <span class="lbl">Year</span>
-      <div class="seg" id="yearSeg" role="group" aria-label="Year"></div>
-    </div>
-
-    <!-- subject cards -->
-    <section id="subjectsView">
-      <div class="eyebrow">Subjects</div>
-      <div class="sv-cards" id="subjectCards"></div>
+    <div class="eyebrow">Select saved questions</div>
+    <section class="picker" aria-label="Select saved questions">
+      <div class="field">
+        <span class="lbl" id="yearLbl">Year</span>
+        <div class="seg" id="yearSeg" role="group" aria-labelledby="yearLbl"></div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="selSubject">Subject</label>
+        <select id="selSubject"></select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="selChapter">Chapter</label>
+        <select id="selChapter" disabled></select>
+      </div>
     </section>
 
-    <!-- list of saved questions of one subject -->
+    <div id="svNote" class="note" role="status"></div>
+
     <section id="listView" hidden>
-      <button class="chip-btn sv-back" id="backToSubjects" type="button">&larr; Subjects</button>
       <h2 class="sv-list-title" id="listTitle"></h2>
       <div class="sv-list" id="qList"></div>
     </section>
