@@ -62,7 +62,7 @@ function renderMath(root){
     }
     return C.years[0];
   }
-  var S = { year: defaultYear(), subject: null };
+  var S = { year: defaultYear(), subject: "", chapter: "" };
   var V = { list: [], pos: 0, q: null, lang: "en", picked: null, mine: false, sol: false, seq: 0 };
   var qcache = {};
 
@@ -79,47 +79,93 @@ function renderMath(root){
   function subjectLabel(key) { var s = C.subjects.filter(function (x) { return x.key === key; })[0]; return s ? (s.label || s.key) : key; }
   function forYear(y) { return entries().filter(function (e) { return e.y === y; }); }
 
-  /* ---------- year + subject cards ---------- */
+  /* ---------- year / subject / chapter pickers (same flow as the hub) ---------- */
+  var SEL_KEY = "sscscholars_saved_selection";
+  function saveSel() { try { localStorage.setItem(SEL_KEY, JSON.stringify({ y: S.year, s: S.subject, c: S.chapter })); } catch (e) {} }
+  function restoreSel() {
+    try {
+      var r = JSON.parse(localStorage.getItem(SEL_KEY) || "null");
+      if (!r || P.get("y")) return;
+      if (C.years.indexOf(r.y) === -1) return;
+      S.year = r.y;
+      if (C.subjects.some(function (x) { return x.key === r.s; })) { S.subject = r.s; S.chapter = r.c || ""; }
+    } catch (e) {}
+  }
+  function chapterGroups(list) {
+    var map = {}, order = [];
+    list.forEach(function (e) {
+      var k = e.chapter || "Other";
+      if (!map[k]) { map[k] = 0; order.push(k); }
+      map[k]++;
+    });
+    order.sort(function (a, b) { return a.localeCompare(b); });
+    return order.map(function (k) { return { name: k, n: map[k] }; });
+  }
+  function opt(value, text, disabled) {
+    var o = document.createElement("option"); o.value = value; o.textContent = text; if (disabled) o.disabled = true; return o;
+  }
+
   function renderYears() {
     var seg = $("yearSeg"); clear(seg);
     C.years.forEach(function (y) {
       var n = forYear(y).length;
       var b = el("button", "", y + (n ? "  \u00B7 " + n : ""));
       b.type = "button"; b.setAttribute("aria-pressed", y === S.year ? "true" : "false");
-      b.addEventListener("click", function () { S.year = y; S.subject = null; render(); });
+      b.addEventListener("click", function () { S.year = y; S.subject = ""; S.chapter = ""; saveSel(); render(); });
       seg.appendChild(b);
     });
   }
-  function renderSubjects() {
-    var host = $("subjectCards"); clear(host);
-    var list = forYear(S.year);
+  function renderPickers() {
+    var yearList = forYear(S.year);
+    var selS = $("selSubject"), selC = $("selChapter");
+    clear(selS); clear(selC);
+
+    selS.appendChild(opt("", "Select subject"));
     C.subjects.forEach(function (sub) {
-      var mine = list.filter(function (e) { return e.s === sub.key; });
-      var card = el("button", "sv-card" + (mine.length ? "" : " empty"));
-      card.type = "button";
-      card.appendChild(el("div", "k", S.year));
-      card.appendChild(el("div", "n", String(mine.length)));
-      card.appendChild(el("div", "l", sub.label || sub.key));
-      card.appendChild(el("div", "s", mine.length ? "saved question" + (mine.length === 1 ? "" : "s") + " \u00B7 tap to open" : "nothing saved yet"));
-      if (mine.length) card.addEventListener("click", function () { S.subject = sub.key; render(); window.scrollTo(0, 0); });
-      host.appendChild(card);
+      var n = yearList.filter(function (e) { return e.s === sub.key; }).length;
+      selS.appendChild(opt(sub.key, (sub.label || sub.key) + " (" + n + ")", n === 0));
     });
-    if (!list.length) {
-      var hint = el("p", "hero-sub", "Nothing saved for " + S.year + " yet. During a mock, tap the Save button on any question and it will show up here.");
-      hint.style.gridColumn = "1 / -1";
-      host.appendChild(hint);
-    }
+    var subjHas = S.subject && yearList.some(function (e) { return e.s === S.subject; });
+    if (!subjHas) { S.subject = ""; S.chapter = ""; }
+    selS.value = S.subject;
+
+    selC.appendChild(opt("", "Select chapter"));
+    if (S.subject) {
+      var subList = yearList.filter(function (e) { return e.s === S.subject; });
+      selC.appendChild(opt("__all__", "All chapters (" + subList.length + ")"));
+      var groups = chapterGroups(subList);
+      groups.forEach(function (g) { selC.appendChild(opt(g.name, g.name + " (" + g.n + ")")); });
+      if (S.chapter && S.chapter !== "__all__" && !groups.some(function (g) { return g.name === S.chapter; })) S.chapter = "";
+      selC.disabled = false;
+    } else { S.chapter = ""; selC.disabled = true; }
+    selC.value = S.chapter;
   }
 
   /* ---------- list ---------- */
   function currentList() {
-    return forYear(S.year).filter(function (e) { return e.s === S.subject; })
-      .sort(function (a, b) { return b.at - a.at; });
+    return forYear(S.year).filter(function (e) {
+      if (e.s !== S.subject) return false;
+      return S.chapter === "__all__" || (e.chapter || "Other") === S.chapter;
+    }).sort(function (a, b) { return b.at - a.at; });
+  }
+  function renderNote() {
+    var note = $("svNote"), total = forYear(S.year).length;
+    note.className = "note";
+    if (!total) {
+      note.innerHTML = "<b>Nothing saved for " + S.year + " yet.</b> During a mock, tap the Save button on any question and it will show up here.";
+    } else if (!S.subject) {
+      note.innerHTML = "<b>" + total + " saved question" + (total === 1 ? "" : "s") + " in " + S.year + ".</b> Choose a subject, then a chapter.";
+    } else if (!S.chapter) {
+      note.innerHTML = "Now choose a <b>chapter</b> to see its saved questions.";
+    } else { note.hidden = true; return; }
+    note.hidden = false;
   }
   function renderList() {
+    var view = $("listView");
+    if (!S.subject || !S.chapter) { view.hidden = true; return; }
     var list = currentList();
-    if (!list.length) { S.subject = null; render(); return; }
-    $("listTitle").textContent = subjectLabel(S.subject) + " \u00B7 " + S.year + " (" + list.length + ")";
+    view.hidden = false;
+    $("listTitle").textContent = (S.chapter === "__all__" ? "All chapters" : S.chapter) + " \u00B7 " + subjectLabel(S.subject) + " \u00B7 " + S.year + " (" + list.length + ")";
     var host = $("qList"); clear(host);
     list.forEach(function (e, idx) {
       var row = el("div", "sv-row");
@@ -127,7 +173,8 @@ function renderMath(root){
       var main = el("div", "sv-main");
       main.appendChild(el("div", "sv-prev", cleanPreview(e.preview) || "(open to view question)"));
       var sub = el("div", "sv-sub");
-      sub.appendChild(el("span", "", (e.chapter || "") + (e.title ? " \u00B7 " + e.title : "") + " \u00B7 Q" + (e.i + 1)));
+      var where = (S.chapter === "__all__" ? (e.chapter || "") + " \u00B7 " : "") + (e.title || "") + " \u00B7 Q" + (e.i + 1);
+      sub.appendChild(el("span", "", where.replace(/^ \u00B7 /, "")));
       if (e.topic) sub.appendChild(el("span", "", e.topic));
       var lab = e.res === "correct" ? "Mock: correct" : e.res === "wrong" ? "Mock: wrong" : "Mock: skipped";
       sub.appendChild(el("span", "chip " + (e.res || "skipped"), lab));
@@ -142,14 +189,14 @@ function renderMath(root){
       row.addEventListener("click", function () { openViewer(list, idx); });
       host.appendChild(row);
     });
+    if (!list.length) host.appendChild(el("div", "sv-empty", "No saved questions here."));
   }
 
   function render() {
     renderYears();
-    var inList = !!S.subject;
-    $("subjectsView").hidden = inList;
-    $("listView").hidden = !inList;
-    if (inList) renderList(); else renderSubjects();
+    renderPickers();
+    renderNote();
+    renderList();
   }
 
   /* ---------- viewer ---------- */
@@ -261,7 +308,8 @@ function renderMath(root){
 
   function init() {
     render();
-    $("backToSubjects").addEventListener("click", function () { S.subject = null; render(); });
+    $("selSubject").addEventListener("change", function () { S.subject = this.value; S.chapter = ""; saveSel(); render(); });
+    $("selChapter").addEventListener("change", function () { S.chapter = this.value; saveSel(); render(); });
     $("vClose").addEventListener("click", closeViewer);
     $("vPrev").addEventListener("click", function () { if (V.pos > 0) { V.pos--; showQuestion(); $all0(); } });
     $("vNext").addEventListener("click", function () { if (V.pos < V.list.length - 1) { V.pos++; showQuestion(); $all0(); } });
@@ -287,5 +335,6 @@ function renderMath(root){
     window.addEventListener("storage", function (ev) { if (ev.key === "sscscholars_saved_v1" && $("viewer").hidden) render(); });
   }
   function $all0() { var s = document.querySelector(".v-scroll"); if (s) s.scrollTop = 0; }
+  restoreSel();
   init();
 })();
