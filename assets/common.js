@@ -26,7 +26,19 @@
       }
       return pump().then(function () { return new Blob(chunks).text(); })
                    .then(function (t) { return JSON.parse(t); });
-    }).then(function (j) { cache[key] = j; return j; });
+    }).then(function (j) { normaliseNames(j); cache[key] = j; return j; });
+  }
+
+  function normaliseNames(j) {
+    if (!j || j.__names) return;
+    (j.categories || []).forEach(function (c) {
+      c.category = decodeText(c.category);
+      (c.chapters || []).forEach(function (ch) {
+        ch.chapter = decodeText(ch.chapter);
+        (ch.sets || []).forEach(function (st) { st.title = decodeText(st.title); });
+      });
+    });
+    j.__names = true;
   }
 
   function describeError(e, year, subject) {
@@ -95,12 +107,34 @@
   /* Some questions arrive with their HTML tags escaped (&lt;span class=&quot;math-tex&quot;&gt;) and would
      show up as visible text. This turns only genuine HTML tags back into tags and leaves math symbols
      such as "x &lt; y" untouched. */
+  /* Text in the data is sometimes escaped twice (&amp;#39; &amp;nbsp; &amp;quot; &amp;times; ...), so the
+     browser shows "&#39;" or "&nbsp;" literally. Turn every double-escaped entity back into a normal one;
+     the browser then decodes it. A plain "&amp;" followed by a space or letter (e.g. "Profit &amp; Loss") is untouched. */
+  var DBL_ENT = /&amp;(#\d{1,7}|#[xX][0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g;
+  function undouble(html) {
+    for (var i = 0; i < 3 && html.indexOf("&amp;") !== -1; i++) {
+      var n = html.replace(DBL_ENT, "&$1;");
+      if (n === html) break;
+      html = n;
+    }
+    return html;
+  }
+  /* Plain-text fields (chapter names, titles, topics): decode all entities to real characters */
+  var _ta = null;
+  function decodeText(s) {
+    if (s == null) return "";
+    s = String(s);
+    if (s.indexOf("&") === -1) return s;
+    s = undouble(s);
+    if (!_ta) _ta = document.createElement("textarea");
+    _ta.innerHTML = s;
+    return _ta.value;
+  }
+
   var ESC_TAG = /&lt;(\/?)(span|p|br|b|i|u|em|strong|sub|sup|img|div|font|table|thead|tbody|tr|td|th|ul|ol|li|h[1-6])((?:\s[^<>]*?)?)(\/?)&gt;/gi;
   function unescapeTags(html) {
     if (!html) return "";
-    if (html.indexOf("&amp;lt;") !== -1) {
-      html = html.replace(/&amp;(lt|gt|quot|amp);/g, "&$1;");
-    }
+    html = undouble(html);
     if (html.indexOf("&lt;") === -1) return html;
     return html.replace(ESC_TAG, function (m, slash, tag, attrs, selfc) {
       attrs = attrs.replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&amp;/g, "&");
@@ -150,7 +184,7 @@
     return {
       q_no: q.q_no || (i + 1),
       id: String(q.uid || q.id || ""),
-      topic: q.topic || "",
+      topic: decodeText(q.topic),
       difficulty_level: q.difficulty_level || "",
       question: { en: fixSrc(qq.en || ""), hi: fixSrc(qq.hi || "") },
       question_image: qimg,
@@ -192,6 +226,6 @@
   window.HubCommon = {
     dataUrl: dataUrl, fetchSubject: fetchSubject, describeError: describeError,
     storageKey: storageKey, readStatus: readStatus, findSet: findSet,
-    buildTest: buildTest, unescapeTags: unescapeTags, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
+    buildTest: buildTest, unescapeTags: unescapeTags, decodeText: decodeText, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
   };
 })();
