@@ -213,6 +213,11 @@
         examTitle: (chapter.chapter + " - " + partTxt + " (" + year + ")").toUpperCase(),
         sectionLabel: label,
         storageKey: storageKey(year, subject, set.set_id),
+        year: String(year),
+        subject: subject,
+        setId: set.set_id,
+        chapterName: chapter.chapter,
+        setTitle: partTxt,
         totalTimeSeconds: secs,
         correctScoreDisplay: fmtScore(csRaw),
         negativeScoreDisplay: fmtScore(nsRaw),
@@ -223,9 +228,29 @@
     };
   }
 
+  /* ---- Saved (bookmarked) questions: kept in this browser only ---- */
+  var SAVED_KEY = "sscscholars_saved_v1";
+  function readSaved() {
+    try { var a = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function writeSaved(list) {
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+  }
+  function savedId(year, subject, setId, idx) { return year + "|" + subject + "|" + setId + "|" + idx; }
+  function addSaved(entry) {
+    var list = readSaved().filter(function (x) { return x.id !== entry.id; });
+    list.push(entry);
+    return writeSaved(list);
+  }
+  function removeSaved(id) {
+    return writeSaved(readSaved().filter(function (x) { return x.id !== id; }));
+  }
+  function countSaved() { return readSaved().length; }
+
   window.HubCommon = {
     dataUrl: dataUrl, fetchSubject: fetchSubject, describeError: describeError,
     storageKey: storageKey, readStatus: readStatus, findSet: findSet,
-    buildTest: buildTest, unescapeTags: unescapeTags, decodeText: decodeText, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
+    buildTest: buildTest, readSaved: readSaved, addSaved: addSaved, removeSaved: removeSaved, savedId: savedId, countSaved: countSaved, unescapeTags: unescapeTags, decodeText: decodeText, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
   };
 })();
