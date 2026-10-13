@@ -268,7 +268,9 @@
     $("resetBtn").addEventListener("click", resetAll);
 
     /* refresh statuses when returning from a test tab */
-    function refresh() { if (S.data && S.ch >= 0) renderSheet(); }
+    function savedCount() { var n = H.countSaved(), b = $("savedCount"); if (b) b.textContent = n ? " (" + n + ")" : ""; }
+    savedCount();
+    function refresh() { savedCount(); if (S.data && S.ch >= 0) renderSheet(); }
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", function () { if (!document.hidden) refresh(); });
     window.addEventListener("storage", refresh);
