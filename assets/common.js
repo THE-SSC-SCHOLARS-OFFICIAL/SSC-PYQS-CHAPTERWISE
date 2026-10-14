@@ -248,9 +248,47 @@
   }
   function countSaved() { return readSaved().length; }
 
+  /* ---- Attempt history: every submitted attempt of a test is kept (no limit), reviewable from the hub ---- */
+  function attemptsKey(year, subject, setId) { return "sscscholars_hub_attempts_" + year + "_" + subject + "_" + setId; }
+  function readAttemptsRaw(key) {
+    try { var a = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function getAttempts(year, subject, setId) {
+    var key = attemptsKey(year, subject, setId), list = readAttemptsRaw(key);
+    /* attempts submitted before this feature existed: pick up the saved result as an attempt */
+    try {
+      var cur = JSON.parse(localStorage.getItem(storageKey(year, subject, setId)) || "null");
+      if (cur && cur.s && cur.s.phase === "submitted" && cur.s.finishedAt) {
+        var id = String(cur.s.finishedAt);
+        if (!list.some(function (a) { return a.id === id; })) {
+          list.push({ id: id, at: cur.s.finishedAt, n: cur.n, s: cur.s });
+          try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    return list.slice().sort(function (a, b) { return a.at - b.at; });
+  }
+  function addAttempt(year, subject, setId, n, snapshot) {
+    var key = attemptsKey(year, subject, setId), list = readAttemptsRaw(key);
+    var at = snapshot.finishedAt || Date.now(), id = String(at);
+    list = list.filter(function (a) { return a.id !== id; });
+    list.push({ id: id, at: at, n: n, s: snapshot });
+    try { localStorage.setItem(key, JSON.stringify(list)); return true; } catch (e) { return false; }
+  }
+  function getAttempt(year, subject, setId, attemptId) {
+    var list = getAttempts(year, subject, setId);
+    for (var i = 0; i < list.length; i++) if (list[i].id === String(attemptId)) return { attempt: list[i], number: i + 1 };
+    return null;
+  }
+  function fmtAttemptDate(ms) {
+    var d = new Date(ms);
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) + ", " +
+      d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  }
+
   window.HubCommon = {
     dataUrl: dataUrl, fetchSubject: fetchSubject, describeError: describeError,
     storageKey: storageKey, readStatus: readStatus, findSet: findSet,
-    buildTest: buildTest, readSaved: readSaved, addSaved: addSaved, removeSaved: removeSaved, savedId: savedId, countSaved: countSaved, unescapeTags: unescapeTags, decodeText: decodeText, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
+    buildTest: buildTest, getAttempts: getAttempts, addAttempt: addAttempt, getAttempt: getAttempt, fmtAttemptDate: fmtAttemptDate, readSaved: readSaved, addSaved: addSaved, removeSaved: removeSaved, savedId: savedId, countSaved: countSaved, unescapeTags: unescapeTags, decodeText: decodeText, fmtScore: fmtScore, shortSubjectLabel: shortSubjectLabel
   };
 })();
