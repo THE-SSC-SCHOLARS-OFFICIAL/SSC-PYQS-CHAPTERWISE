@@ -16,6 +16,8 @@ var hasHindi = QUESTIONS.some(function(q){ return q.question && q.question.hi; }
 
 var state = null;
 var timerHandle = null;
+var REVIEW_ID = new URLSearchParams(location.search).get("attempt");   /* ?attempt=<id> opens a past attempt read-only */
+var REVIEW = !!REVIEW_ID;
 var draft = null;            /* option picked on the current question but not saved yet */
 
 function $(id){ return document.getElementById(id); }
@@ -44,6 +46,7 @@ function loadState(){
   }catch(e){ return freshState(); }
 }
 function saveState(){
+  if(REVIEW) return;                    /* reviewing an old attempt never changes any saved data */
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({n:N, s:state})); }catch(e){}
 }
 
@@ -640,17 +643,18 @@ function openSubmit(){
 }
 function closeSubmitModal(){ $("submitModal").classList.remove("show"); }
 
-function computeResult(){
+function computeResult(){ return computeResultFor(state); }
+function computeResultFor(S){
   var correct=0, wrong=0, unattempt=0, marks=0, neg=0, maxMarks=0;
   for(var i=0;i<N;i++){
-    var q = QUESTIONS[i], sel = state.q[i].selected, cs = qScore(q), ns = qNeg(q);
+    var q = QUESTIONS[i], sel = S.q[i].selected, cs = qScore(q), ns = qNeg(q);
     maxMarks += cs;
     if(sel === null || sel === undefined){ unattempt++; }
     else if(sel === q.answer){ correct++; marks += cs; }
     else { wrong++; neg += ns; marks -= ns; }
   }
   var attempted = correct + wrong;
-  var timeTaken = CFG.totalTimeSeconds - state.timeLeft;
+  var timeTaken = CFG.totalTimeSeconds - S.timeLeft;
   return {
     correct: correct, wrong: wrong, unattempt: unattempt, attempted: attempted,
     score: r2(marks), maxMarks: r2(maxMarks), negMarksTotal: r2(neg),
@@ -665,6 +669,11 @@ function doSubmit(){
   state.finishedAt = Date.now();
   state.result = computeResult();
   saveState();
+  try{
+    if(window.HubCommon && typeof HubCommon.addAttempt === "function"){
+      HubCommon.addAttempt(CFG.year, CFG.subject, CFG.setId, N, JSON.parse(JSON.stringify(state)));
+    }
+  }catch(e){}
   try{ if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(function(){}); } }catch(e){}
   renderResult();
   showScreen("resultPage");
@@ -847,8 +856,28 @@ document.addEventListener("keydown", function(e){
 window.addEventListener("storage", function(e){ if(e.key === "sscscholars_saved_v1"){ refreshSavedIds(); if(state){ paintSaveBtns(); } } });
 
 /* ================= INIT ================= */
+function bootReview(){
+  var found = (window.HubCommon && typeof HubCommon.getAttempt === "function") ? HubCommon.getAttempt(CFG.year, CFG.subject, CFG.setId, REVIEW_ID) : null;
+  if(!found) throw new Error("That attempt was not found in this browser (or the latest common.js is missing).");
+  var s = found.attempt.s;
+  if(!s || !s.q || s.q.length !== N) throw new Error("This attempt belongs to an older version of this test and cannot be opened.");
+  s.q.forEach(function(x){ if(typeof x.t !== "number") x.t = 0; });
+  s.phase = "submitted"; s.solFilter = "all"; s.solIndex = 0;
+  if(!s.result) s.result = computeResultFor(s);
+  state = s;
+  refreshSavedIds();
+  initStaticText();
+  applyPalState();
+  var b = $("reviewBanner");
+  b.hidden = false;
+  b.textContent = "Reviewing Attempt " + found.number + " \u00B7 " + HubCommon.fmtAttemptDate(found.attempt.at) + " (read-only, nothing here changes your saved progress)";
+  $("reattemptBtn").style.display = "none";
+  renderResult();
+  showScreen("resultPage");
+}
 function boot(){
   applyZoom();
+  if(REVIEW){ bootReview(); return; }
   state = loadState();
   refreshSavedIds();
   initStaticText();
