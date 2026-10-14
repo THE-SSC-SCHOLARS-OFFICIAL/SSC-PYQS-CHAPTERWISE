@@ -223,15 +223,15 @@
       nums.appendChild(q); nums.appendChild(t); nums.appendChild(m);
       row.appendChild(nums);
 
-      var stat, btnText, ghost = false;
-      if (st && st.kind === "done") { stat = el("div", "tstatus done", "Scored " + st.score + " / " + st.max); btnText = "View result"; ghost = true; }
+      var stat, btnText, ghost = false, startNew = false;
+      if (st && st.kind === "done") { stat = el("div", "tstatus done", "Scored " + st.score + " / " + st.max); btnText = "Start new test"; startNew = true; }
       else if (st && st.kind === "progress") { stat = el("div", "tstatus progress", "In progress, " + mmss(st.left) + " remaining"); btnText = "Resume test"; }
       else { stat = el("div", "tstatus", "Not attempted"); btnText = "Start test"; }
       row.appendChild(stat);
 
       var acts = el("div", "acts");
       var a = el("a", "go" + (ghost ? " ghost" : ""), btnText);
-      a.href = startUrl(set.set_id);
+      a.href = startUrl(set.set_id) + (startNew ? "&new=1" : "");
       a.target = "_blank";
       a.rel = "noopener";
       acts.appendChild(a);
