@@ -735,6 +735,7 @@ function renderResult(){
 
 function restartTest(){ $("reattemptModal").classList.add("show"); }
 function doRestart(){
+  archiveCurrent();
   try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
   window.location.reload();
 }
@@ -856,6 +857,25 @@ document.addEventListener("keydown", function(e){
 window.addEventListener("storage", function(e){ if(e.key === "sscscholars_saved_v1"){ refreshSavedIds(); if(state){ paintSaveBtns(); } } });
 
 /* ================= INIT ================= */
+/* ?new=1 (hub "Start new test"): archive the finished attempt, then begin a clean one */
+function archiveCurrent(){
+  try{
+    if(window.HubCommon && typeof HubCommon.addAttempt === "function" && state && state.phase === "submitted" && state.finishedAt){
+      return HubCommon.addAttempt(CFG.year, CFG.subject, CFG.setId, N, JSON.parse(JSON.stringify(state)));
+    }
+  }catch(e){}
+  return false;
+}
+function startFreshIfAsked(){
+  var p = new URLSearchParams(location.search);
+  if(p.get("new") !== "1") return;
+  p.delete("new");
+  try{ history.replaceState(null, "", location.pathname + (p.toString() ? "?" + p.toString() : "")); }catch(e){}
+  if(state.phase === "submitted" && archiveCurrent()){   /* only wipe once the result is safely in the attempt history */
+    state = freshState();
+    saveState();
+  }
+}
 function bootReview(){
   var found = (window.HubCommon && typeof HubCommon.getAttempt === "function") ? HubCommon.getAttempt(CFG.year, CFG.subject, CFG.setId, REVIEW_ID) : null;
   if(!found) throw new Error("That attempt was not found in this browser (or the latest common.js is missing).");
@@ -879,6 +899,7 @@ function boot(){
   applyZoom();
   if(REVIEW){ bootReview(); return; }
   state = loadState();
+  startFreshIfAsked();
   refreshSavedIds();
   initStaticText();
   initWelcome();
