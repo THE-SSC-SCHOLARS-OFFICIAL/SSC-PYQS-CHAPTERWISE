@@ -2,7 +2,7 @@
    Everything happens in the browser; nothing is uploaded anywhere. */
 (function () {
   var SAVED_KEY = "sscscholars_saved_v1";
-  var EXTRA_KEYS = ["sscscholars_theme", "sscscholars_zoom_level"];
+  var EXTRA_KEYS = ["sscscholars_theme", "sscscholars_zoom_level", "sscscholars_profile_v1"];
   var PREFIX = "SSC1";
 
   function allowed(k) {
