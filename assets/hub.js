@@ -161,6 +161,7 @@
   function startUrl(setId) {
     return "test.html?y=" + encodeURIComponent(S.year) + "&s=" + encodeURIComponent(S.subject) + "&id=" + encodeURIComponent(setId);
   }
+  function reviewUrl(setId, attemptId) { return startUrl(setId) + "&attempt=" + encodeURIComponent(attemptId); }
   function mmss(sec) {
     sec = Math.max(0, Math.round(sec || 0));
     var m = Math.floor(sec / 60), s = sec % 60;
@@ -228,11 +229,31 @@
       else { stat = el("div", "tstatus", "Not attempted"); btnText = "Start test"; }
       row.appendChild(stat);
 
+      var acts = el("div", "acts");
       var a = el("a", "go" + (ghost ? " ghost" : ""), btnText);
       a.href = startUrl(set.set_id);
       a.target = "_blank";
       a.rel = "noopener";
-      row.appendChild(a);
+      acts.appendChild(a);
+
+      var atts = typeof H.getAttempts === "function" ? H.getAttempts(S.year, S.subject, set.set_id) : [];
+      if (atts.length) {
+        var sel = el("select", "att-sel");
+        sel.setAttribute("aria-label", "Review a past attempt");
+        var ph = el("option", null, "Attempts (" + atts.length + ")"); ph.value = ""; sel.appendChild(ph);
+        atts.forEach(function (at, i) {
+          var o = el("option", null, "Attempt " + (i + 1) + " - " + H.fmtAttemptDate(at.at));
+          o.value = at.id; sel.appendChild(o);
+        });
+        sel.addEventListener("change", function () {
+          var id = this.value; this.value = "";
+          if (!id) return;
+          var w = window.open(reviewUrl(set.set_id, id), "_blank", "noopener");
+          if (!w) window.location.href = reviewUrl(set.set_id, id);
+        });
+        acts.appendChild(sel);
+      }
+      row.appendChild(acts);
       rows.appendChild(row);
     });
     sheet.appendChild(rows);
