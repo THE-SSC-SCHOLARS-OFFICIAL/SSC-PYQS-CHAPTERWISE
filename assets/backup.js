@@ -9,7 +9,8 @@
     if (k === SAVED_KEY || EXTRA_KEYS.indexOf(k) !== -1) return true;
     return /^sscscholars_hub_[^_]+_.+/.test(k) && k !== "sscscholars_hub_selection";
   }
-  function isTestKey(k) { return k !== SAVED_KEY && EXTRA_KEYS.indexOf(k) === -1; }
+  function isAttemptsKey(k) { return k.indexOf("sscscholars_hub_attempts_") === 0; }
+  function isTestKey(k) { return k !== SAVED_KEY && EXTRA_KEYS.indexOf(k) === -1 && !isAttemptsKey(k); }
   function parse(s) { try { return JSON.parse(s); } catch (e) { return null; } }
 
   /* ---------- collect / describe ---------- */
@@ -24,19 +25,20 @@
     return d;
   }
   function describe(d) {
-    var tests = 0, done = 0, progress = 0, saved = 0;
+    var tests = 0, done = 0, progress = 0, saved = 0, attempts = 0;
     Object.keys(d).forEach(function (k) {
-      if (k === SAVED_KEY) { var a = parse(d[k]); saved = Array.isArray(a) ? a.length : 0; }
+      if (isAttemptsKey(k)) { var arr = parse(d[k]); attempts += Array.isArray(arr) ? arr.length : 0; }
+      else if (k === SAVED_KEY) { var a = parse(d[k]); saved = Array.isArray(a) ? a.length : 0; }
       else if (isTestKey(k)) {
         var o = parse(d[k]); if (!o || !o.s) return;
         tests++;
         if (o.s.phase === "submitted") done++; else if (o.s.phase === "testing" || o.s.phase === "paused") progress++;
       }
     });
-    return { tests: tests, done: done, progress: progress, saved: saved };
+    return { tests: tests, done: done, progress: progress, saved: saved, attempts: attempts };
   }
   function summaryText(x) {
-    return x.tests + " mock attempt" + (x.tests === 1 ? "" : "s") + " (" + x.done + " submitted, " + x.progress + " in progress) and " + x.saved + " saved question" + (x.saved === 1 ? "" : "s");
+    return x.tests + " mock attempt" + (x.tests === 1 ? "" : "s") + " (" + x.done + " submitted, " + x.progress + " in progress), " + x.attempts + " past attempt" + (x.attempts === 1 ? "" : "s") + " for review and " + x.saved + " saved question" + (x.saved === 1 ? "" : "s");
   }
 
   /* ---------- encode / decode ---------- */
@@ -95,7 +97,11 @@
   function mergeIn(d) {
     Object.keys(d).forEach(function (k) {
       var local = null; try { local = localStorage.getItem(k); } catch (e) {}
-      if (k === SAVED_KEY) {
+      if (isAttemptsKey(k)) {
+        var la = parse(local) || [], lb = parse(d[k]) || [], m2 = {};
+        la.concat(lb).forEach(function (e) { if (e && e.id) m2[e.id] = m2[e.id] || e; });
+        localStorage.setItem(k, JSON.stringify(Object.keys(m2).map(function (id) { return m2[id]; })));
+      } else if (k === SAVED_KEY) {
         var a = parse(local) || [], b = parse(d[k]) || [], map = {};
         a.concat(b).forEach(function (e) { if (e && e.id && (!map[e.id] || (e.at || 0) >= (map[e.id].at || 0))) map[e.id] = e; });
         localStorage.setItem(k, JSON.stringify(Object.keys(map).map(function (id) { return map[id]; })));
@@ -202,7 +208,7 @@
   function prepare() {
     var d = collect(), x = describe(d);
     els.bkMakeMsg.className = "bk-msg"; els.bkMakeMsg.textContent = "";
-    if (!x.tests && !x.saved) {
+    if (!x.tests && !x.saved && !x.attempts) {
       els.bkMakeSum.textContent = "Nothing to back up yet. Attempt a mock or save a question first.";
       els.bkCode.value = ""; curCode = "";
       els.bkCopyCode.disabled = els.bkCopyLink.disabled = els.bkDownload.disabled = true; return;
@@ -224,7 +230,7 @@
     if (!String(text).trim()) { els.bkRestoreSum.textContent = ""; return; }
     decode(text).then(function (d) {
       var x = describe(d);
-      if (!x.tests && !x.saved) { els.bkRestoreSum.textContent = "This backup is empty."; return; }
+      if (!x.tests && !x.saved && !x.attempts) { els.bkRestoreSum.textContent = "This backup is empty."; return; }
       parsed = d;
       els.bkRestoreSum.textContent = "Found: " + summaryText(x) + ".";
       els.bkMerge.disabled = els.bkReplace.disabled = false;
