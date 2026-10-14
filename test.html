@@ -242,6 +242,7 @@
   </header>
   <div class="res-scroll">
     <div class="resultwrap">
+      <div id="reviewBanner" hidden style="background:#fff3cd;color:#664d03;border:1px solid #ffe08a;border-radius:10px;padding:11px 16px;margin-bottom:12px;font-weight:700;font-size:13.5px;"></div>
       <div class="score-hero">
         <div class="sh-left">
           <div class="sh-kicker">Test Completed</div>
@@ -249,7 +250,7 @@
           <p id="resSub">Section</p>
           <div class="sh-actions">
             <button type="button" class="btn-blue" onclick="showSolutions()">View Solutions</button>
-            <button type="button" class="btn-ghost-w" onclick="restartTest()">Reattempt</button>
+            <button type="button" class="btn-ghost-w" id="reattemptBtn" onclick="restartTest()">Reattempt</button>
             <a class="btn-ghost-w" href="index.html">Back to Hub</a>
           </div>
         </div>
