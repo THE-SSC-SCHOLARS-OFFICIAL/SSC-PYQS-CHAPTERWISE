@@ -166,3 +166,9 @@ a.chip-btn{display:inline-block; text-decoration:none;}
   .acts .go{margin-top:0; flex:1 1 150px; padding:14px 18px;}
   .att-sel{flex:1 1 150px; width:auto; padding:14px 34px 14px 12px; font-size:11.5px;}
 }
+
+@media (max-width:520px){
+  .brand-text{display:none;}
+  .nav-btns{flex-wrap:nowrap; margin-left:auto;}
+  .chip-btn{padding:9px 8px; font-size:9.5px; letter-spacing:.5px;}
+}
