@@ -677,6 +677,27 @@ function doSubmit(){
   try{ if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(function(){}); } }catch(e){}
   renderResult();
   showScreen("resultPage");
+  showXpGain();
+}
+
+/* "[SYSTEM] +EXP" line on the result page (Hunter dashboard) */
+function showXpGain(){
+  if(REVIEW || !state || !state.result) return;
+  var sc = document.createElement("script");
+  sc.src = "assets/hunter.js";
+  sc.onload = function(){
+    try{
+      var xp = Hunter.xpOf(state.result, N), m = Hunter.build();
+      var host = document.querySelector("#resultPage .sh-left"); if(!host) return;
+      var old = $("xpGain"); if(old) old.remove();
+      var d = document.createElement("div");
+      d.id = "xpGain";
+      d.style.cssText = "margin-top:10px;display:inline-block;background:rgba(10,20,50,.55);border:1px solid rgba(130,190,255,.75);border-radius:8px;padding:8px 12px;font-weight:800;font-size:13px;letter-spacing:.4px;";
+      d.innerHTML = "[SYSTEM] +" + xp + " EXP &nbsp;&middot;&nbsp; Hunter LV." + m.level + " (" + m.rank.letter + "-Rank) &nbsp;&middot;&nbsp; <a href=\"dashboard.html\" style=\"color:#a9d4ff\">Open Dashboard</a>";
+      host.insertBefore(d, host.querySelector(".sh-actions"));
+    }catch(e){}
+  };
+  document.head.appendChild(sc);
 }
 
 /* ================= RESULT / ANALYSIS ================= */
