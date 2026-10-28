@@ -1,0 +1,496 @@
+{
+ "category": {
+  "id": "ssc-sub-top",
+  "title": "SSC TOP QUESTIONS",
+  "subtitle": "All SSC Exams Top Questions",
+  "board": "ssc",
+  "board_title": "SSC EXAMS"
+ },
+ "extracted_at": "2026-10-27T03:24:31.064151+00:00",
+ "stats": {
+  "tests_listed": 119,
+  "tests_extracted": 0,
+  "tests_skipped": 119,
+  "questions": 0,
+  "questions_with_images": 0
+ },
+ "skipped_tests": [
+  {
+   "id": "SSC-SUB-25-MATH-NUMBER-SYSTEM-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-NUMBER-SYSTEM-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-PARTNERSHIP-TOP-35-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-ALGEBRA-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TRIGONOMETRY-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-ALGEBRA-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TRIGONOMETRY-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-HEIGHT-AND-DISTANCE-TOP-25-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-2D-TOP-100-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-2D-TOP-100-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-2D-TOP-100-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-2D-TOP-100-part-4",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-3D-TOP-125-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-3D-TOP-125-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-3D-TOP-125-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-3D-TOP-125-part-4",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MENSURATION-3D-TOP-125-part-5",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-GEOMETRY-TOP-125-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-GEOMETRY-TOP-125-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-GEOMETRY-TOP-125-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-GEOMETRY-TOP-125-part-4",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-GEOMETRY-TOP-125-part-5",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-COORDINATE-GEOMETRY-TOP-30-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-AVERAGE-TOP-60-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-AVERAGE-TOP-60-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-COMPOUND-INTEREST-CI-TOP-40-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-DISCOUNT-TOP-60-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-COMPOUND-INTEREST-CI-TOP-40-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-DISCOUNT-TOP-60-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-LCM-AND-HCF-TOP-25-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MIXTURE-AND-ALLIGATION-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-MIXTURE-AND-ALLIGATION-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-PERCENTAGE-TOP-60-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-PERCENTAGE-TOP-60-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-PROFIT-AND-LOSS-TOP-60-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-PROFIT-AND-LOSS-TOP-60-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-RATIO-AND-PROPORTION-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-RATIO-AND-PROPORTION-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-SIMPLE-INTEREST-SI-TOP-45-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-SIMPLE-INTEREST-SI-TOP-45-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-SIMPLIFICATION-AND-APPROXIMATION-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-SIMPLIFICATION-AND-APPROXIMATION-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TIME-AND-WORK-AND-PIPE-AND-CISTERN-TOP-60-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TIME-AND-WORK-AND-PIPE-AND-CISTERN-TOP-60-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TIME-SPEED-AND-DISTANCE-AND-TRAIN-TOP-65-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TIME-SPEED-AND-DISTANCE-AND-TRAIN-TOP-65-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-MATH-TIME-SPEED-AND-DISTANCE-AND-TRAIN-TOP-65-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-BLOOD-RELATION-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-BLOOD-RELATION-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CALENDAR-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CALENDAR-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CALENDAR-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CODING-DECODING-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CODING-DECODING-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-CODING-DECODING-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-DECISION-MAKING-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-DECISION-MAKING-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-DECISION-MAKING-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-LETTER-SERIES-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-LETTER-SERIES-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-LETTER-SERIES-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-LETTER-ALPHABETICAL-ANALOGY-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-MATHEMATICAL-OPERATIONS-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-LETTER-ALPHABETICAL-ANALOGY-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-MATHEMATICAL-OPERATIONS-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-MATHEMATICAL-OPERATIONS-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-NUMBER-ANALOGY-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-NUMBER-ANALOGY-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-NUMBER-SERIES-TOP-80-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-NUMBER-SERIES-TOP-80-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-NUMBER-SERIES-TOP-80-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ODD-ONE-OUT-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ODD-ONE-OUT-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ODD-ONE-OUT-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ORDER-AND-RANKING-TOP-75-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ORDER-AND-RANKING-TOP-75-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-ORDER-AND-RANKING-TOP-75-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-SEATING-ARRANGEMENT-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-SEATING-ARRANGEMENT-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-STATEMENT-AND-CONCLUSION-TOP-65-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-STATEMENT-AND-CONCLUSION-TOP-65-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-STATEMENT-AND-CONCLUSION-TOP-65-part-3",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-SYLLOGISM-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-SYLLOGISM-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-WORD-ANALOGY-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-WORD-ANALOGY-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-WORD-FORMATION-TOP-50-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-25-REASONING-WORD-FORMATION-TOP-50-part-2",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-ADDRESS-SENTENCE-MATCHING-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-AGE-PROBLEMS-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-BLOOD-RELATIONS-TOP-8-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-CLOCK-AND-CALENDAR-TOP-9-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-CODING-AND-DECODING-TOP-18-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-COUNTING-FIGURES-TOP-6-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-CRITICAL-REASONING-TOP-18-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-DATA-SUFFICIENCY-TOP-4-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-DICTIONARY-ALPHABETICAL-ORDER-TOP-2-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-DIRECTION-AND-DISTANCE-TOP-8-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-EMBEDDED-FIGURES-TOP-4-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-FIGURE-COMPLETING-TOP-1-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-FIGURE-SERIES-AND-FIGURE-ANALOGY-TOP-7-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-INEQUALITY-TOP-12-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-INPUT-OUTPUT-TOP-7-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-LETTER-AND-ALPHANUMERIC-SERIES-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-LETTER-ALPHABETICAL-ANALOGY-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-MISCELLANEOUS-TOP-1-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-MATHEMATICAL-OPERATIONS-TOP-18-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-MISSING-NUMBER-TOP-10-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-NUMBER-ANALOGY-TOP-7-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-NUMBER-SERIES-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-ODD-ONE-OUT-TOP-18-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-ORDER-AND-RANKING-TOP-6-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-PAPER-FOLDING-CUTTING-AND-MIRROR-WATER-IMAGES-TOP-6-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-SEATING-AND-MIXED-ARRANGEMENT-TOP-15-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-STATEMENT-AND-CONCLUSION-TOP-17-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-STATEMENT-ASSUMPTION-AND-ARGUMENT-TOP-10-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-SYLLOGISM-TOP-13-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-WORD-ANALOGY-TOP-11-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  },
+  {
+   "id": "SSC-SUB-26-REASONING-WORD-FORMATION-AND-LETTER-WORD-POSITION-TOP-9-QUESTION-part-1",
+   "reason": "HTTP 404: content_not_ready"
+  }
+ ],
+ "tests": []
+}
