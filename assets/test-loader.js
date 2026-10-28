@@ -16,10 +16,11 @@
     fail("This test link is incomplete.", "Open Mock Hub, choose a chapter and press Start test.");
     return;
   }
-  $("loadSub").textContent = year + " " + subject;
+  var subjLbl = H.shortSubjectLabel(subject);
+  $("loadSub").textContent = year + " " + subjLbl;
 
   H.fetchSubject(year, subject, function (bytes) {
-    $("loadSub").textContent = year + " " + subject + " - " + (bytes / 1048576).toFixed(1) + " MB received";
+    $("loadSub").textContent = year + " " + subjLbl + " - " + (bytes / 1048576).toFixed(1) + " MB received";
   }).then(function (json) {
     var found = H.findSet(json, id);
     if (!found) { fail("Test not found.", "\"" + id + "\" is not present in this data file. Choose the test again from Mock Hub."); return; }
