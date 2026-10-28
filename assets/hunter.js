@@ -52,6 +52,7 @@
     if (!subject) subject = remaining.split("_")[0];
     return { y: y, subject: subject, setId: remaining.slice(subject.length + 1) };
   }
+  function baseOf(k) { k = String(k || ""); var i = k.lastIndexOf("."); return i >= 0 ? k.slice(i + 1) : k; }
   function collect() {
     var list = [], seen = {};
     function push(key, y, subject, setId, id, at, r, n) {
@@ -115,7 +116,7 @@
 
     /* subjects */
     var subjects = (cf.subjects || []).map(function (s) {
-      var mine = att.filter(function (a) { return a.subject === s.key; });
+      var mine = att.filter(function (a) { return baseOf(a.subject) === s.key; });   /* exam-wise / top attempts count towards their base subject */
       var xp = mine.reduce(function (t, a) { return t + a.xp; }, 0);
       var info = levelInfo(xp, SUBJ);
       var accs = mine.map(function (a) { return a.r.accuracy != null ? a.r.accuracy : 0; });
