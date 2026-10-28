@@ -214,7 +214,7 @@
   }
 
   /* =============== recent battles =============== */
-  function subjLabel(k) { var s = (C.subjects || []).filter(function (x) { return x.key === k; })[0]; return s ? (s.label || s.key) : k; }
+  function subjLabel(k) { return window.HubCommon && HubCommon.subjectLabel ? HubCommon.subjectLabel(k) : k; }
   function renderBattles() {
     var list = M.attempts.slice(-8).reverse();
     if (!list.length) { $("battleWin").innerHTML = '<h3 class="wt">Recent Battles</h3><div class="empty">No battles yet. Your cleared mocks will be listed here.</div>'; return; }
