@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mock Test Hub | THE SSC SCHOLARS OFFICIAL</title>
-<meta name="description" content="SSC chapter-wise previous year question mock tests. Choose a subject and chapter, then start a timed test.">
+<meta name="description" content="SSC previous year question mock tests: chapter-wise, exam-wise and top questions. Choose a section, then a subject and chapter, and start a timed test.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,31 +31,44 @@
 
   <main id="viewport">
     <section class="hero-wrap">
-      <div class="eyebrow">Previous year questions // Chapter-wise</div>
-      <h1 class="hero-title">SSC Chapter-wise PYQ <span class="dim">Mock Test Hub</span></h1>
-      <p class="hero-sub">Previous year SSC questions, organised by subject and chapter. Choose a subject and a chapter, then start a timed test. Every test opens in a new tab, so this page stays open and you can line up the next one.</p>
+      <div class="eyebrow">Previous year questions // SSC</div>
+      <h1 class="hero-title">SSC PYQ <span class="dim">Mock Test Hub</span></h1>
+      <p class="hero-sub">Practise previous year SSC questions in three ways: chapter by chapter, exam by exam, or only the top repeated questions. Pick a section below. Every test opens in a new tab, so this page stays open and you can line up the next one.</p>
       <div class="hero-stats" id="heroStats"></div>
     </section>
 
-    <div class="eyebrow">Select a test</div>
-    <section class="picker" aria-label="Select a test">
-      <div class="field">
-        <span class="lbl" id="yearLbl">Year</span>
-        <div class="seg" id="yearSeg" role="group" aria-labelledby="yearLbl"></div>
+    <div class="eyebrow">Step 1 // Choose a section</div>
+    <section class="sec-cards" id="secCards" aria-label="Choose a section"></section>
+
+    <div id="pickWrap" class="pick-wrap" hidden>
+      <div class="eyebrow">Step 2 // Select a test</div>
+      <div class="pick-head">
+        <h2 id="pickTitle"></h2>
+        <p id="pickHint"></p>
       </div>
-      <div class="field">
-        <label class="lbl" for="selSubject">Subject</label>
-        <select id="selSubject"></select>
-      </div>
-      <div class="field" id="catField" hidden>
-        <label class="lbl" for="selCategory">Category</label>
-        <select id="selCategory"></select>
-      </div>
-      <div class="field">
-        <label class="lbl" for="selChapter">Chapter</label>
-        <select id="selChapter" disabled></select>
-      </div>
-    </section>
+      <section class="picker" aria-label="Select a test">
+        <div class="field">
+          <span class="lbl" id="yearLbl">Year</span>
+          <div class="seg" id="yearSeg" role="group" aria-labelledby="yearLbl"></div>
+        </div>
+        <div class="field" id="examField" hidden>
+          <label class="lbl" for="selExam">Exam</label>
+          <select id="selExam"></select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="selSubject">Subject</label>
+          <select id="selSubject"></select>
+        </div>
+        <div class="field" id="catField" hidden>
+          <label class="lbl" for="selCategory">Category</label>
+          <select id="selCategory"></select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="selChapter">Chapter</label>
+          <select id="selChapter" disabled></select>
+        </div>
+      </section>
+    </div>
 
     <div id="note" class="note" hidden role="status"></div>
 
