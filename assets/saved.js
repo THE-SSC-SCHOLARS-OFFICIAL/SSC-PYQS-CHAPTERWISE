@@ -76,7 +76,14 @@ function renderMath(root){
     return String(t || "").replace(/\\[()\[\]]/g, "").replace(/\$\$?/g, "").replace(/\\([a-zA-Z]+)/g, "$1").replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
   }
   function entries() { return H.readSaved(); }
-  function subjectLabel(key) { var s = C.subjects.filter(function (x) { return x.key === key; })[0]; return s ? (s.label || s.key) : key; }
+  function subjectLabel(key) { return H.subjectLabel ? H.subjectLabel(key) : key; }
+  /* base subjects + any exam-wise / top-question subject that has saved questions */
+  function subjectList(yearList) {
+    var list = C.subjects.map(function (x) { return { key: x.key, label: x.label || x.key }; }), seen = {};
+    list.forEach(function (x) { seen[x.key] = 1; });
+    yearList.forEach(function (e) { if (!seen[e.s]) { seen[e.s] = 1; list.push({ key: e.s, label: subjectLabel(e.s) }); } });
+    return list;
+  }
   function forYear(y) { return entries().filter(function (e) { return e.y === y; }); }
 
   /* ---------- year / subject / chapter pickers (same flow as the hub) ---------- */
@@ -88,7 +95,7 @@ function renderMath(root){
       if (!r || P.get("y")) return;
       if (C.years.indexOf(r.y) === -1) return;
       S.year = r.y;
-      if (C.subjects.some(function (x) { return x.key === r.s; })) { S.subject = r.s; S.chapter = r.c || ""; }
+      if (r.s) { S.subject = r.s; S.chapter = r.c || ""; }
     } catch (e) {}
   }
   function chapterGroups(list) {
@@ -121,7 +128,7 @@ function renderMath(root){
     clear(selS); clear(selC);
 
     selS.appendChild(opt("", "Select subject"));
-    C.subjects.forEach(function (sub) {
+    subjectList(yearList).forEach(function (sub) {
       var n = yearList.filter(function (e) { return e.s === sub.key; }).length;
       selS.appendChild(opt(sub.key, (sub.label || sub.key) + " (" + n + ")", n === 0));
     });
